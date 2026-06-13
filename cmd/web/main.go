@@ -1,55 +1,59 @@
 package main
 
 import (
+	"blog/internal/config"
+	"blog/internal/migration"
 	"blog/internal/post"
-	"blog/internal/store"
+	"database/sql"
 	"log"
+	"log/slog"
 	"net"
 	"net/http"
+	"os"
 )
 
-type config struct {
-	port   string
-	dbPath string
-}
-
-func Load() (*config, error) {
-	return &config{
-		port:   "2026",
-		dbPath: "./blog.sqlite",
-	}, nil
-}
-
 func main() {
-	cfg, err := Load()
+	cfg, err := config.Web()
 	if err != nil {
 		log.Fatalln("failed to load config:", err)
 	}
 
-	db, err := store.OpenDB(cfg.dbPath)
+	db, err := openDB(cfg.DbPath)
 	if err != nil {
-		panic(err)
+		log.Fatalln("failed to open db:", err)
 	}
 	defer db.Close()
 
-	if err := store.MigrationUP(cfg.dbPath); err != nil {
-		panic(err)
+	if err := migration.UP(cfg.DbPath); err != nil {
+		log.Fatalln("failed to do migration up:", err)
 	}
 
-	store := store.NewStore(db)
-
-	_ = store
+	postSvc := post.NewService(cfg, db)
 
 	mux := http.NewServeMux()
-
-	post.RegisterRoutes(mux)
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./cmd/web/static"))))
+	postSvc.RegisterRoutes(mux)
 
 	srv := http.Server{
-		Addr:    net.JoinHostPort("0.0.0.0", cfg.port),
+		Addr:    net.JoinHostPort("0.0.0.0", cfg.Port),
 		Handler: mux,
 	}
 
+	slog.Info("starting blog server on", "address", srv.Addr, "pid", os.Getpid())
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalln("listen and serve:", err)
 	}
+}
+
+func openDB(dbPath string) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", dbPath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := db.Ping(); err != nil {
+		return nil, err
+	}
+
+	return db, nil
 }

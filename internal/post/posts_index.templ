@@ -1,0 +1,24 @@
+package post 
+
+import "blog/internal/shares"
+
+templ PostsIndexPage(posts []Post) {
+    @shares.Layout()
+    <ul>
+        for _, post := range posts {
+            <li class="post-item">
+                <div class="post-date">
+                    if post.PublishedAt != nil {
+                        { post.PublishedAt.Format("02 January 2006") }
+                    }
+                </div>
+
+                <h2 class="post-title">
+                    <a href={ templ.URL("/blog/" + post.Slug) }>
+                        { post.Title }
+                    </a>
+                </h2>
+            </li>
+        }
+    </ul>
+}
