@@ -1,13 +1,15 @@
 package post
 
 import (
+	"bytes"
 	"database/sql"
 	"errors"
-	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
 	"path/filepath"
+
+	"github.com/yuin/goldmark/parser"
 )
 
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
@@ -15,19 +17,26 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 
 	posts, err := s.store.ListPosts(ctx, false)
 	if err != nil {
-		slog.ErrorContext(ctx, "failed to list all posts", "error", err)
+		slog.ErrorContext(ctx, "failed to list posts", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
+	tags, err := s.store.ListTags(ctx)
+	if err != nil {
+		slog.ErrorContext(ctx, "failed to list tags", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+
+	en, fa := groupPostsByLanguageAndYear(posts)
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := PostsIndexPage(posts).Render(ctx, w); err != nil {
+	if err := PostsIndexPage(en, fa, tags).Render(ctx, w); err != nil {
 		slog.ErrorContext(ctx, "failed to render post index page", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
-
-	fmt.Println("posts", posts)
 }
 
 func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -54,29 +63,43 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 
 	tags, err := s.store.TagsByPostID(ctx, post.ID)
-	if !errors.Is(err, sql.ErrNoRows) {
-		slog.ErrorContext(ctx, "failed to get post's tags", "slug", slug, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+	if err != nil {
+		if !errors.Is(err, sql.ErrNoRows) {
+			slog.ErrorContext(ctx, "failed to get post's tags", "slug", slug, "error", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
 	}
 
-	_ = tags
-
 	postPath := filepath.Join(s.cfg.LocalContentRepo, post.Filename)
-
 	contentMD, err := os.ReadFile(postPath)
 	if err != nil {
 		slog.ErrorContext(
 			ctx, "failed to read post's markdown file",
 			"slug", slug,
-			"location", postPath,
+			"path", postPath,
 			"error", err,
 		)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
 	}
 
-	_ = contentMD
+	parserCtx := parser.NewContext()
+
+	var buf bytes.Buffer
+	if err := s.md.Convert(contentMD, &buf, parser.WithContext(parserCtx)); err != nil {
+		slog.ErrorContext(ctx, "failed to convert markdown to html", "slug", slug, "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
+	contentHTML := buf.String()
+
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := PostPage(post, tags, contentHTML).Render(ctx, w); err != nil {
+		slog.ErrorContext(ctx, "failed to render post view", "error", err)
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		return
+	}
 
 }
 

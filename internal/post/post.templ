@@ -1,0 +1,31 @@
+package post
+
+import "blog/internal/shares"
+
+templ PostPage(post Post, tags []Tag, htmlContent string) {
+    @shares.Layout(post.Title) {
+        <article>
+            <header class="post-header">
+                <div class="post-date">
+                    if post.PublishedAt != nil {
+                        { post.PublishedAt.Format("02 January 2006") }
+                    }
+                </div>
+                <h1 class="post-title">{ post.Title }</h1>
+                if len(tags) > 0 {
+                    <div class="post-tags">
+                        for _, tag := range tags {
+                            <a href={ templ.URL("/blog/tag/" + tag.Slug) } class="tag">
+                                { tag.Name }
+                            </a>
+                        }
+                    </div>
+                }
+            </header>
+            <div class="post-content">
+                @templ.Raw(htmlContent)
+            </div>
+            <a href="/posts" class="back-link">← Back to blog</a>
+        </article>
+    }
+}

@@ -8,6 +8,9 @@ WHERE (
 ORDER BY published_at DESC;
 
 
+-- name: ListTags :many
+SELECT * FROM tags;
+
 -- name: PostByID :one
 SELECT * FROM posts 
 WHERE id = ?

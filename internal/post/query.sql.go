@@ -54,6 +54,33 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 	return items, nil
 }
 
+const listTags = `-- name: ListTags :many
+SELECT id, name, slug FROM tags
+`
+
+func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
+	rows, err := q.db.QueryContext(ctx, listTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tag
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(&i.ID, &i.Name, &i.Slug); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const postByID = `-- name: PostByID :one
 SELECT id, filename, title, slug, cover_image, language, is_favorite, version, created_at, published_at, updated_at FROM posts 
 WHERE id = ?

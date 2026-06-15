@@ -10,6 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
+	"github.com/yuin/goldmark/parser"
+	"github.com/yuin/goldmark/renderer/html"
+	"go.abhg.dev/goldmark/frontmatter"
 )
 
 func main() {
@@ -28,7 +34,9 @@ func main() {
 		log.Fatalln("failed to do migration up:", err)
 	}
 
-	postSvc := post.NewService(cfg, db)
+	md := setupMDParser()
+
+	postSvc := post.NewService(cfg, db, md)
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./cmd/web/static"))))
@@ -56,4 +64,24 @@ func openDB(dbPath string) (*sql.DB, error) {
 	}
 
 	return db, nil
+}
+
+func setupMDParser() goldmark.Markdown {
+	md := goldmark.New(
+		goldmark.WithExtensions(
+			extension.GFM,
+			extension.Linkify,
+			&frontmatter.Extender{},
+		),
+		goldmark.WithParserOptions(
+			parser.WithAutoHeadingID(),
+		),
+		goldmark.WithRendererOptions(
+			html.WithHardWraps(),
+			html.WithXHTML(),
+			html.WithUnsafe(),
+		),
+	)
+
+	return md
 }

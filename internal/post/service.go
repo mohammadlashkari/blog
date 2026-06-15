@@ -3,6 +3,8 @@ package post
 import (
 	"blog/internal/config"
 	"database/sql"
+
+	"github.com/yuin/goldmark"
 )
 
 type Language string
@@ -15,11 +17,13 @@ const (
 type Service struct {
 	cfg   *config.Config
 	store Querier
+	md    goldmark.Markdown
 }
 
-func NewService(cfg *config.Config, db *sql.DB) *Service {
+func NewService(cfg *config.Config, db *sql.DB, md goldmark.Markdown) *Service {
 	return &Service{
 		cfg:   cfg,
 		store: New(db),
+		md:    md,
 	}
 }
