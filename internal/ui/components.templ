@@ -1,0 +1,18 @@
+package ui
+
+script initWasm() {
+    const go = new Go();
+    WebAssembly.instantiateStreaming(
+        fetch("/static/bin/life.wasm"),
+        go.importObject,
+    ).then((result) => {
+        go.run(result.instance);
+    });
+}
+
+templ GameOfLifeEmbed() {
+	<canvas id="board" width="400" height="400"></canvas>
+	<button id="pauseButton">Pause</button>
+	<script src="/static/wasm_exec.js"></script>
+	@initWasm()
+}

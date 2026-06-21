@@ -147,6 +147,8 @@ func (g *game) drawGlider() {
 }
 
 func main() {
+	log.Println("game of life wasm loaded")
+
 	doc := js.Global().Get("document")
 	if !doc.Truthy() {
 		log.Fatalln("unable to get document object")

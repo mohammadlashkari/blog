@@ -1,6 +1,7 @@
 package post
 
 import (
+	"blog/internal/ui"
 	"bytes"
 	"database/sql"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/a-h/templ"
 	"github.com/yuin/goldmark/parser"
 )
 
@@ -94,8 +96,13 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	contentHTML := buf.String()
 
+	var component templ.Component
+	if post.Slug == "game-of-life" {
+		component = ui.GameOfLifeEmbed()
+	}
+
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := PostPage(post, tags, contentHTML).Render(ctx, w); err != nil {
+	if err := PostPage(post, tags, contentHTML, component).Render(ctx, w); err != nil {
 		slog.ErrorContext(ctx, "failed to render post view", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return

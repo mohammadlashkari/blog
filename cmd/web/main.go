@@ -5,11 +5,14 @@ import (
 	"blog/internal/migration"
 	"blog/internal/post"
 	"database/sql"
+	"io/fs"
 	"log"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+
+	"blog/internal/ui"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -39,7 +42,12 @@ func main() {
 	postSvc := post.NewService(cfg, db, md)
 
 	mux := http.NewServeMux()
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("./cmd/web/static"))))
+
+	staticFS, err := fs.Sub(ui.StaticFS, "static")
+	if err != nil {
+		log.Println(err)
+	}
+	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
 	postSvc.RegisterRoutes(mux)
 
 	srv := http.Server{

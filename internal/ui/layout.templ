@@ -1,0 +1,42 @@
+package ui
+
+import (
+	"strconv"
+	"time"
+)
+
+templ Layout(title string) {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1"/>
+			<meta name="color-scheme" content="light dark"/>
+			<link rel="stylesheet" href="/static/css/pico.min.css"/>
+			<link rel="stylesheet" href="/static/css/blog.css"/>
+			<title>{ title }</title>
+		</head>
+		<body>
+			<header class="container">
+				<nav>
+					<ul>
+						<li><strong><a href="/">Mohammad</a></strong></li>
+					</ul>
+					<ul>
+						<li><a href="/blog">Blog</a></li>
+						<li><a href="/about">About</a></li>
+					</ul>
+				</nav>
+			</header>
+			<main class="container">
+				{ children... }
+			</main>
+			<footer class="container">
+				<hr/>
+				<small>
+					© 2024–{ strconv.Itoa(time.Now().Year()) } Mohammad Lashkari
+				</small>
+			</footer>
+		</body>
+	</html>
+}

@@ -1,82 +1,74 @@
 package post 
 
 import (
-    "strconv"
-    "blog/internal/shares"
+	"blog/internal/ui"
+	"strconv"
 )
 
 templ PostsIndexPage(
-    english []yearGroup,
-    persian []yearGroup,
-    tags []Tag,
+	english []yearGroup,
+	persian []yearGroup,
+	tags []Tag,
 ) {
-    @shares.Layout("Blog") {
-        <header class="container">
-            <hgroup>
-                <h1>Blog</h1>
-                <p>Thoughts, notes, and experiments</p>
-            </hgroup>
-
-            <nav>
-                <ul>
-                    for _, tag := range tags {
-                        <li>
-                            <a href={ templ.URL("/tag/" + tag.Slug) }>
-                                { tag.Name }
-                            </a>
-                        </li>
-                    }
-                </ul>
-            </nav>
-        </header>
-
-        <main class="container">
-            <div class="grid">
-
-                <!-- English -->
-                <section>
-                    <h2>English</h2>
-
-                    for _, group := range english {
-                            <h3>{ strconv.Itoa(group.year) }</h3>
-                            <ul>
-                                for _, post := range group.posts {
-                                    <li>
-                                        <small style="float:right">
-                                            { post.PublishedAt.Format("02 Jan") }
-                                        </small>
-                                        <a href={ templ.URL("/post/" + post.Slug) }>
-                                            { post.Title }
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                    }
-                </section>
-
-                <!-- Farsi -->
-                <section dir="rtl">
-                    <h2>فارسی</h2>
-
-                    for _, group := range persian {
-                            <h3>{ strconv.Itoa(group.year) }</h3>
-
-                            <ul>
-                                for _, post := range group.posts {
-                                    <li>
-                                        <small style="float:left">
-                                            { post.PublishedAt.Format("02 Jan") }
-                                        </small>
-                                        <a href={ templ.URL("/post/" + post.Slug) }>
-                                            { post.Title }
-                                        </a>
-                                    </li>
-                                }
-                            </ul>
-                    }
-                </section>
-
-            </div>
-        </main>
-    }
+	@ui.Layout("Blog") {
+		<header class="container">
+			<hgroup>
+				<h1>Blog</h1>
+				<p>Thoughts, notes, and experiments</p>
+			</hgroup>
+			<nav>
+				<ul>
+					for _, tag := range tags {
+						<li>
+							<a href={ templ.URL("/tag/" + tag.Slug) }>
+								{ tag.Name }
+							</a>
+						</li>
+					}
+				</ul>
+			</nav>
+		</header>
+		<main class="container">
+			<div class="grid">
+				<!-- English -->
+				<section>
+					<h2>English</h2>
+					for _, group := range english {
+						<h3>{ strconv.Itoa(group.year) }</h3>
+						<ul>
+							for _, post := range group.posts {
+								<li>
+									<small style="float:right">
+										{ post.PublishedAt.Format("02 Jan") }
+									</small>
+									<a href={ templ.URL("/post/" + post.Slug) }>
+										{ post.Title }
+									</a>
+								</li>
+							}
+						</ul>
+					}
+				</section>
+				<!-- Farsi -->
+				<section dir="rtl">
+					<h2>فارسی</h2>
+					for _, group := range persian {
+						<h3>{ strconv.Itoa(group.year) }</h3>
+						<ul>
+							for _, post := range group.posts {
+								<li>
+									<small style="float:left">
+										{ post.PublishedAt.Format("02 Jan") }
+									</small>
+									<a href={ templ.URL("/post/" + post.Slug) }>
+										{ post.Title }
+									</a>
+								</li>
+							}
+						</ul>
+					}
+				</section>
+			</div>
+		</main>
+	}
 }
