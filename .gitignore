@@ -1,3 +1,5 @@
+bin
 .env
 *.db
 *.sqlite
+wasm_exec*.js
