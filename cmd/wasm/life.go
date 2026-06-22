@@ -147,7 +147,7 @@ func (g *game) drawGlider() {
 }
 
 func main() {
-	log.Println("game of life wasm loaded")
+	log.Println("hello game of life")
 
 	doc := js.Global().Get("document")
 	if !doc.Truthy() {

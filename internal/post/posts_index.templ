@@ -1,4 +1,4 @@
-package post 
+package post
 
 import (
 	"blog/internal/ui"
@@ -11,7 +11,7 @@ templ PostsIndexPage(
 	tags []Tag,
 ) {
 	@ui.Layout("Blog") {
-		<header class="container">
+		<header class="container index-wide">
 			<hgroup>
 				<h1>Blog</h1>
 				<p>Thoughts, notes, and experiments</p>
@@ -28,8 +28,8 @@ templ PostsIndexPage(
 				</ul>
 			</nav>
 		</header>
-		<main class="container">
-			<div class="grid">
+		<section class="container index-wide">
+			<div class="posts-grid">
 				<!-- English -->
 				<section>
 					for _, group := range english {
@@ -37,12 +37,12 @@ templ PostsIndexPage(
 						<ul>
 							for _, post := range group.posts {
 								<li>
-									<small style="float:right">
-										{ post.PublishedAt.Format("02 Jan") }
-									</small>
 									<a href={ templ.URL("/post/" + post.Slug) }>
 										{ post.Title }
 									</a>
+									<small class="post-date">
+										{ post.PublishedAt.Format("02 Jan") }
+									</small>
 								</li>
 							}
 						</ul>
@@ -55,18 +55,18 @@ templ PostsIndexPage(
 						<ul>
 							for _, post := range group.posts {
 								<li>
-									<small style="float:left">
-										{ post.PublishedAt.Format("02 Jan") }
-									</small>
 									<a href={ templ.URL("/post/" + post.Slug) }>
 										{ post.Title }
 									</a>
+									<small class="post-date">
+										{ post.PublishedAt.Format("02 Jan") }
+									</small>
 								</li>
 							}
 						</ul>
 					}
 				</section>
 			</div>
-		</main>
+		</section>
 	}
 }

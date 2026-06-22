@@ -33,12 +33,7 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 
 	en, fa := groupPostsByLanguageAndYear(posts)
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := PostsIndexPage(en, fa, tags).Render(ctx, w); err != nil {
-		slog.ErrorContext(ctx, "failed to render post index page", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
+	render(w, r, PostsIndexPage(en, fa, tags))
 }
 
 func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -101,22 +96,5 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		component = ui.GameOfLifeEmbed()
 	}
 
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := PostPage(post, tags, contentHTML, component).Render(ctx, w); err != nil {
-		slog.ErrorContext(ctx, "failed to render post view", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-}
-
-func handleAbout(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("about\n"))
-}
-
-func healthz(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("ok\n"))
+	render(w, r, PostPage(post, tags, contentHTML, component))
 }

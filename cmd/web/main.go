@@ -40,21 +40,24 @@ func main() {
 	postSvc := post.NewService(cfg, db, md)
 
 	mux := http.NewServeMux()
-	chainMiddlewars(
-		mux,
-		recoverPanic,
-		logger,
-		secureHeaders,
-		rateLimit(cfg),
-	)
 	mux.Handle("/static/", http.FileServer(http.FS(ui.StaticFS)))
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/posts", http.StatusFound)
+	})
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
 	postSvc.RegisterRoutes(mux)
 
+	handler := chainMiddlewars(
+		mux,
+		recoverPanic,
+		logger,
+		rateLimit(cfg),
+	)
+
 	srv := http.Server{
 		Addr:    net.JoinHostPort("0.0.0.0", cfg.Port),
-		Handler: mux,
+		Handler: handler,
 	}
 
 	slog.Info("starting blog server on", "address", srv.Addr, "pid", os.Getpid())
