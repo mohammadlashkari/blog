@@ -2,6 +2,7 @@ package main
 
 import (
 	"blog/internal/config"
+	"context"
 	"log/slog"
 	"net"
 	"net/http"
@@ -111,6 +112,16 @@ func rateLimit(cfg *config.Config) func(http.Handler) http.Handler {
 			mu.Unlock()
 
 			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// check the cookie
+			ctx := context.WithValue(r.Context(), "isAdmin", true)
+			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}
 }
