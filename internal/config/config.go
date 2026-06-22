@@ -15,6 +15,6 @@ func Web() (*Config, error) {
 	return &Config{
 		Port:             "2026",
 		DbPath:           "./blog.sqlite",
-		LocalContentRepo: "/home/mohammad/Projects/blog-content/",
+		LocalContentRepo: "/home/lsk/Projects/blog-content/",
 	}, nil
 }

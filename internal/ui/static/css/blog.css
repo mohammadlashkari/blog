@@ -1,0 +1,130 @@
+/* blog.css — thin overrides on top of Pico */
+
+/* Vazirmatn — bundled locally, used for Farsi (RTL) text */
+@font-face {
+	font-family: "Vazirmatn";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/static/fonts/Vazirmatn-Regular.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Vazirmatn";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/static/fonts/Vazirmatn-Bold.woff2") format("woff2");
+}
+
+[lang="fa"],
+[dir="rtl"] {
+	font-family: "Vazirmatn", Tahoma, sans-serif;
+}
+
+/* ---- Sticky footer: keep copyright at the bottom ---- */
+body {
+	display: flex;
+	flex-direction: column;
+	min-height: 100vh;
+}
+main {
+	flex: 1 0 auto;
+}
+
+/* ---- Strip Pico's card box around article content ---- */
+article.post {
+	margin: 0 auto;
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+/* ---- Page widths ---- */
+/* index breaks out wider than Pico's default container */
+.container.index-wide {
+	max-width: 1240px;
+}
+/* single post / about kept narrow for comfortable reading */
+.container.post {
+	max-width: 760px;
+}
+
+/* ---- Index two-column list (English | Farsi) ---- */
+.posts-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 96px;
+}
+@media (max-width: 768px) {
+	.posts-grid {
+		grid-template-columns: 1fr;
+		gap: 32px;
+	}
+}
+.posts-grid h3 {
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--pico-muted-color);
+	margin: 1.5rem 0 0.5rem;
+}
+.posts-grid ul {
+	list-style: none;
+	margin: 0 0 1.5rem;
+	padding: 0;
+}
+.posts-grid li {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 1rem;
+	padding: 0.2rem 0;
+}
+.post-date {
+	flex: none;
+	white-space: nowrap;
+	color: var(--pico-muted-color);
+	font-size: 0.85rem;
+}
+
+/* ---- Single post header ---- */
+.post-header {
+	margin-bottom: 2rem;
+}
+.post-title {
+	margin: 0.3rem 0 0.6rem;
+}
+.post-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 0.5rem;
+}
+.tag {
+	font-size: 0.8rem;
+	text-decoration: none;
+	color: var(--pico-muted-color);
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: 1rem;
+	padding: 0.1rem 0.6rem;
+}
+.tag:hover {
+	color: var(--pico-primary);
+	border-color: var(--pico-primary);
+}
+.back-link {
+	display: inline-block;
+	margin-top: 2.5rem;
+	color: var(--pico-muted-color);
+	font-size: 0.9rem;
+}
+
+/* ---- Game of Life embed ---- */
+#board {
+	display: block;
+	max-width: 100%;
+	height: auto;
+	margin: 1rem 0;
+	border: 1px solid var(--pico-muted-border-color);
+}

@@ -4,7 +4,7 @@ import "blog/internal/ui"
 
 templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Component) {
 	@ui.Layout(post.Title) {
-		<article>
+		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
 			<header class="post-header">
 				<div class="post-date">
 					if post.PublishedAt != nil {
@@ -15,7 +15,7 @@ templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Compon
 				if len(tags) > 0 {
 					<div class="post-tags">
 						for _, tag := range tags {
-							<a href={ templ.URL("/blog/tag/" + tag.Slug) } class="tag">
+							<a href={ templ.URL("/tag/" + tag.Slug) } class="tag">
 								{ tag.Name }
 							</a>
 						}

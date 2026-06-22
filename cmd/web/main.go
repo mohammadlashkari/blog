@@ -48,6 +48,9 @@ func main() {
 		log.Println(err)
 	}
 	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/posts", http.StatusFound)
+	})
 	postSvc.RegisterRoutes(mux)
 
 	srv := http.Server{
