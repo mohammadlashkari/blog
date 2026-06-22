@@ -32,7 +32,6 @@ templ PostsIndexPage(
 			<div class="grid">
 				<!-- English -->
 				<section>
-					<h2>English</h2>
 					for _, group := range english {
 						<h3>{ strconv.Itoa(group.year) }</h3>
 						<ul>
@@ -51,7 +50,6 @@ templ PostsIndexPage(
 				</section>
 				<!-- Farsi -->
 				<section dir="rtl">
-					<h2>فارسی</h2>
 					for _, group := range persian {
 						<h3>{ strconv.Itoa(group.year) }</h3>
 						<ul>
