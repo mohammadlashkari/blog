@@ -16,5 +16,6 @@ func Web() (*Config, error) {
 		Port:             "2026",
 		DbPath:           "./blog.sqlite",
 		LocalContentRepo: "/home/mohammad/Projects/blog-content/",
+		LimiterEnable:    false,
 	}, nil
 }

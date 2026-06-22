@@ -5,7 +5,6 @@ import (
 	"blog/internal/migration"
 	"blog/internal/post"
 	"database/sql"
-	"io/fs"
 	"log"
 	"log/slog"
 	"net"
@@ -38,16 +37,19 @@ func main() {
 	}
 
 	md := setupMDParser()
-
 	postSvc := post.NewService(cfg, db, md)
 
 	mux := http.NewServeMux()
-
-	staticFS, err := fs.Sub(ui.StaticFS, "static")
-	if err != nil {
-		log.Println(err)
-	}
-	mux.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.FS(staticFS))))
+	chainMiddlewars(
+		mux,
+		recoverPanic,
+		logger,
+		secureHeaders,
+		rateLimit(cfg),
+	)
+	mux.Handle("/static/", http.FileServer(http.FS(ui.StaticFS)))
+	mux.HandleFunc("GET /about", handleAbout)
+	mux.HandleFunc("GET /health", handleHealth)
 	postSvc.RegisterRoutes(mux)
 
 	srv := http.Server{
