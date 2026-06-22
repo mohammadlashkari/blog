@@ -11,11 +11,13 @@ type Config struct {
 	WebhookSecret     string  `env:"WEBHOOK_SECRET"`
 }
 
-func Web() (*Config, error) {
+func New() (*Config, error) {
 	return &Config{
-		Port:             "2026",
-		DbPath:           "./blog.sqlite",
-		LocalContentRepo: "/home/mohammad/Projects/blog-content/",
-		LimiterEnable:    false,
+		Port:              "2026",
+		DbPath:            "./blog.sqlite",
+		LocalContentRepo:  "/home/mohammad/Projects/blog-content",
+		RemoteContentRepo: "https://github.com/mohammadlashkari/blog-content.git",
+		LimiterEnable:     false,
+		WebhookSecret:     "secret",
 	}, nil
 }

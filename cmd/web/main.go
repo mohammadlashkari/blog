@@ -4,12 +4,17 @@ import (
 	"blog/internal/config"
 	"blog/internal/migration"
 	"blog/internal/post"
+	"context"
 	"database/sql"
+	"errors"
+	"io/fs"
 	"log"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"os/exec"
+	"time"
 
 	"blog/internal/ui"
 
@@ -21,12 +26,42 @@ import (
 )
 
 func main() {
-	cfg, err := config.Web()
+	ctx := context.Background()
+
+	cfg, err := config.New()
 	if err != nil {
 		log.Fatalln("failed to load config:", err)
 	}
 
-	db, err := openDB(cfg.DbPath)
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
+		defer cancel()
+
+		if _, err := os.ReadDir(cfg.LocalContentRepo); err != nil {
+			if !errors.Is(err, fs.ErrNotExist) {
+				slog.ErrorContext(ctx, "failed to read content repo dir", "error", err)
+				return
+			}
+
+			cmd := exec.CommandContext(ctx, "git", "clone", cfg.RemoteContentRepo, cfg.LocalContentRepo)
+			if output, err := cmd.CombinedOutput(); err != nil {
+				slog.ErrorContext(ctx, "git clone failed", "error", err, "output", string(output))
+				return
+			}
+			slog.InfoContext(ctx, "git clone succeeded")
+			return
+		}
+
+		cmd := exec.CommandContext(ctx, "git", "pull", "origin", "master")
+		cmd.Dir = cfg.LocalContentRepo
+		if output, err := cmd.CombinedOutput(); err != nil {
+			slog.ErrorContext(ctx, "git pull failed", "error", err, "output", string(output))
+			return
+		}
+		slog.InfoContext(ctx, "git pull succeeded")
+	}()
+
+	db, err := openDB(ctx, cfg.DbPath)
 	if err != nil {
 		log.Fatalln("failed to open db:", err)
 	}
@@ -66,13 +101,13 @@ func main() {
 	}
 }
 
-func openDB(dbPath string) (*sql.DB, error) {
+func openDB(ctx context.Context, dbPath string) (*sql.DB, error) {
 	db, err := sql.Open("sqlite3", dbPath)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := db.Ping(); err != nil {
+	if err := db.PingContext(ctx); err != nil {
 		return nil, err
 	}
 

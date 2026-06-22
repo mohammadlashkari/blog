@@ -2,4 +2,5 @@ Add admin only endpoints
 Add resume download
 Add Vazir font
 Add cache layer
+Shutdown handle
 
