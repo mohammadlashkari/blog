@@ -80,7 +80,7 @@ func main() {
 		http.Redirect(w, r, "/posts", http.StatusFound)
 	})
 	mux.HandleFunc("GET /admin/login", handleAdminLogin)
-	mux.HandleFunc("GET /health", handleHealth)
+	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
 	postSvc.RegisterRoutes(mux)
 

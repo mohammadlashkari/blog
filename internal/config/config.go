@@ -15,7 +15,7 @@ func New() (*Config, error) {
 	return &Config{
 		Port:              "2026",
 		DbPath:            "./blog.sqlite",
-		LocalContentRepo:  "/home/mohammad/Projects/blog-content",
+		LocalContentRepo:  "/home/lsk/Projects/blog-content",
 		RemoteContentRepo: "https://github.com/mohammadlashkari/blog-content.git",
 		LimiterEnable:     false,
 		WebhookSecret:     "secret",

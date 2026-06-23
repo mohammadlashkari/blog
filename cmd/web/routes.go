@@ -4,6 +4,8 @@ import (
 	"crypto/subtle"
 	"encoding/json"
 	"net/http"
+
+	"blog/internal/ui"
 )
 
 type IsAdminRequest struct {
@@ -24,8 +26,9 @@ func handleAdminLogin(w http.ResponseWriter, r *http.Request) {
 
 func handleAbout(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("about\n"))
+	if err := ui.AboutPage().Render(r.Context(), w); err != nil {
+		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	}
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {

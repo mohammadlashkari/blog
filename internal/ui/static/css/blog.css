@@ -1,4 +1,8 @@
-/* blog.css — thin overrides on top of Pico */
+/* blog.css — minimal sans theme layered on Pico v2 */
+
+/* ============================================================
+   Fonts
+   ============================================================ */
 
 /* Vazirmatn — bundled locally, used for Farsi (RTL) text */
 @font-face {
@@ -21,7 +25,89 @@
 	font-family: "Vazirmatn", Tahoma, sans-serif;
 }
 
-/* ---- Sticky footer: keep copyright at the bottom ---- */
+/* ============================================================
+   Design tokens — override Pico custom properties
+   ============================================================ */
+
+:root {
+	--pico-font-family-sans-serif: system-ui, -apple-system, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, sans-serif;
+	--pico-font-family: var(--pico-font-family-sans-serif);
+
+	--pico-font-size: 18px;
+	--pico-line-height: 1.7;
+	--pico-typography-spacing-vertical: 1.4rem;
+	--pico-spacing: 1.25rem;
+	--pico-border-radius: 6px;
+
+	/* Light palette — warm near-neutral, single indigo accent */
+	--pico-background-color: #fcfcfb;
+	--pico-color: #20201d;
+	--pico-muted-color: #76746e;
+	--pico-muted-border-color: #e9e8e3;
+	--pico-border-color: #e9e8e3;
+
+	--pico-h1-color: #16150f;
+	--pico-h2-color: #16150f;
+	--pico-h3-color: #16150f;
+	--pico-h4-color: #16150f;
+	--pico-h5-color: #16150f;
+	--pico-h6-color: #16150f;
+
+	--pico-primary: #4a55c7;
+	--pico-primary-hover: #353fa3;
+	--pico-primary-focus: rgba(74, 85, 199, 0.25);
+	--pico-primary-underline: rgba(74, 85, 199, 0.4);
+	--pico-primary-hover-underline: #353fa3;
+
+	--pico-code-background-color: #f3f2ee;
+	--pico-code-color: #45433c;
+	--pico-blockquote-border-color: #e0dfd8;
+
+	--pico-text-underline-offset: 0.15em;
+
+	/* tighter, calmer headings */
+	--pico-font-weight: 400;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	font-weight: 650;
+	letter-spacing: -0.012em;
+}
+
+/* Dark palette — deep cool neutral, accent lifted for contrast */
+@media (prefers-color-scheme: dark) {
+	:root:not([data-theme="light"]) {
+		--pico-background-color: #16171b;
+		--pico-color: #d8d8d2;
+		--pico-muted-color: #8f8e88;
+		--pico-muted-border-color: #292b31;
+		--pico-border-color: #292b31;
+
+		--pico-h1-color: #f2f1ec;
+		--pico-h2-color: #f2f1ec;
+		--pico-h3-color: #f2f1ec;
+		--pico-h4-color: #f2f1ec;
+		--pico-h5-color: #f2f1ec;
+		--pico-h6-color: #f2f1ec;
+
+		--pico-primary: #a0a7f0;
+		--pico-primary-hover: #c2c7f7;
+		--pico-primary-focus: rgba(160, 167, 240, 0.25);
+		--pico-primary-underline: rgba(160, 167, 240, 0.35);
+		--pico-primary-hover-underline: #c2c7f7;
+
+		--pico-code-background-color: #20222a;
+		--pico-code-color: #c4c3bc;
+		--pico-blockquote-border-color: #31343c;
+	}
+}
+
+/* ============================================================
+   Layout scaffolding
+   ============================================================ */
+
+/* Sticky footer: keep copyright at the bottom */
 body {
 	display: flex;
 	flex-direction: column;
@@ -31,43 +117,125 @@ main {
 	flex: 1 0 auto;
 }
 
-/* ---- Strip Pico's card box around article content ---- */
-article.post {
-	margin: 0 auto;
-	padding: 0;
-	background: none;
-	border: 0;
-	border-radius: 0;
-	box-shadow: none;
-}
-
-/* ---- Page widths ---- */
-/* index breaks out wider than Pico's default container */
+/* Page widths.
+   Pico drops container padding at >=576px (gutter comes from max-width +
+   auto margins). Our custom max-widths can exceed mid-size viewports, so
+   restore horizontal padding to keep a gutter when the container is full-width. */
 .container.index-wide {
-	max-width: 1240px;
+	max-width: 1040px;
+	padding-right: var(--pico-spacing);
+	padding-left: var(--pico-spacing);
 }
-/* single post / about kept narrow for comfortable reading */
 .container.post {
-	max-width: 760px;
+	max-width: 720px;
+	padding-right: var(--pico-spacing);
+	padding-left: var(--pico-spacing);
 }
 
-/* ---- Index two-column list (English | Farsi) ---- */
+/* ============================================================
+   Header nav + footer
+   ============================================================ */
+
+/* pin chrome to the index width so the nav aligns with page content at
+   every breakpoint (Pico's stepped .container max-widths would misalign it) */
+body > header.container,
+body > footer.container {
+	max-width: 1040px;
+	padding-right: var(--pico-spacing);
+	padding-left: var(--pico-spacing);
+}
+body > header.container {
+	padding-top: 1.75rem;
+	padding-bottom: 1.75rem;
+}
+body > header nav a {
+	color: var(--pico-color);
+	text-decoration: none;
+}
+body > header nav a:hover {
+	color: var(--pico-primary);
+}
+body > header nav ul:first-child strong a {
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+body > header nav {
+	flex-wrap: wrap;
+	gap: 0.25rem 1rem;
+}
+body > header nav ul:last-child {
+	gap: 0.5rem;
+	font-size: 0.95rem;
+}
+
+body > footer.container {
+	padding-top: 1.5rem;
+	padding-bottom: 2.5rem;
+}
+body > footer hr {
+	margin-bottom: 1.25rem;
+	border: none;
+	border-top: 1px solid var(--pico-muted-border-color);
+}
+body > footer small {
+	color: var(--pico-muted-color);
+	font-size: 0.85rem;
+}
+
+/* ============================================================
+   Posts index
+   ============================================================ */
+
+.index-wide hgroup h1 {
+	margin-bottom: 0.25rem;
+}
+.index-wide hgroup p {
+	color: var(--pico-muted-color);
+	margin-bottom: 0;
+}
+
+/* tag nav row under the index heading */
+.index-wide > nav {
+	margin: 1.75rem 0 0.5rem;
+	border-top: 1px solid var(--pico-muted-border-color);
+	padding-top: 1rem;
+}
+.index-wide > nav ul {
+	gap: 0;
+	flex-wrap: wrap;
+}
+.index-wide > nav a {
+	font-size: 0.85rem;
+	color: var(--pico-muted-color);
+	text-decoration: none;
+}
+.index-wide > nav a:hover {
+	color: var(--pico-primary);
+}
+
+/* two-column list (English | Farsi) */
 .posts-grid {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
-	gap: 96px;
+	gap: clamp(32px, 5vw, 72px);
+	margin-top: 1rem;
 }
-@media (max-width: 768px) {
+@media (max-width: 900px) {
 	.posts-grid {
 		grid-template-columns: 1fr;
-		gap: 32px;
+		gap: 40px;
 	}
 }
 .posts-grid h3 {
-	font-size: 1rem;
+	font-size: 0.78rem;
 	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
 	color: var(--pico-muted-color);
-	margin: 1.5rem 0 0.5rem;
+	margin: 2rem 0 0.75rem;
+}
+.posts-grid h3:first-child {
+	margin-top: 0;
 }
 .posts-grid ul {
 	list-style: none;
@@ -79,20 +247,208 @@ article.post {
 	justify-content: space-between;
 	align-items: baseline;
 	gap: 1rem;
-	padding: 0.2rem 0;
+	padding: 0.35rem 0;
+}
+.posts-grid li a {
+	text-decoration: none;
+	text-decoration-color: transparent;
+	transition: text-decoration-color 0.15s ease;
+}
+.posts-grid li a:hover {
+	text-decoration: underline;
+	text-decoration-color: var(--pico-primary-underline);
 }
 .post-date {
 	flex: none;
 	white-space: nowrap;
 	color: var(--pico-muted-color);
-	font-size: 0.85rem;
+	font-size: 0.8rem;
+	font-variant-numeric: tabular-nums;
 }
 
-/* ---- Game of Life embed ---- */
+/* ============================================================
+   Single post
+   ============================================================ */
+
+/* strip Pico's card box around article content */
+article.post {
+	margin: 0 auto;
+	padding: 0;
+	background: none;
+	border: 0;
+	border-radius: 0;
+	box-shadow: none;
+}
+
+.post-header {
+	margin-bottom: 2.5rem;
+}
+.post-header .post-date {
+	display: block;
+	font-size: 0.78rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin-bottom: 0.75rem;
+}
+.post-title {
+	margin: 0 0 0.75rem;
+	line-height: 1.2;
+	font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
+}
+
+/* tag chips */
+.post-tags {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	margin-top: 1rem;
+}
+.post-tags .tag {
+	font-size: 0.78rem;
+	color: var(--pico-muted-color);
+	text-decoration: none;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: 999px;
+	padding: 0.15rem 0.7rem;
+	transition: border-color 0.15s ease, color 0.15s ease;
+}
+.post-tags .tag:hover {
+	color: var(--pico-primary);
+	border-color: var(--pico-primary);
+}
+
+/* prose */
+.post-content {
+	line-height: 1.75;
+}
+.post-content > :first-child {
+	margin-top: 0;
+}
+.post-content h2 {
+	margin-top: 2.5rem;
+	font-size: 1.5rem;
+}
+.post-content h3 {
+	margin-top: 2rem;
+	font-size: 1.2rem;
+}
+.post-content p,
+.post-content ul,
+.post-content ol {
+	margin-bottom: 1.4rem;
+}
+.post-content a {
+	text-underline-offset: 0.15em;
+}
+.post-content img {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	display: block;
+	margin: 2rem auto;
+}
+.post-content blockquote {
+	margin: 1.75rem 0;
+	padding: 0.25rem 0 0.25rem 1.25rem;
+	border-left: 3px solid var(--pico-primary);
+	color: var(--pico-muted-color);
+	font-style: italic;
+}
+.post-content blockquote p:last-child {
+	margin-bottom: 0;
+}
+.post-content :not(pre) > code {
+	font-size: 0.88em;
+	padding: 0.1rem 0.35rem;
+	border-radius: 4px;
+}
+.post-content pre {
+	border-radius: var(--pico-border-radius);
+	font-size: 0.85rem;
+	line-height: 1.6;
+	margin: 1.75rem 0;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+/* wide tables scroll horizontally instead of overflowing the viewport */
+.post-content table {
+	display: block;
+	width: 100%;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+}
+.post-content hr {
+	margin: 2.5rem 0;
+	border: none;
+	border-top: 1px solid var(--pico-muted-border-color);
+}
+
+/* back link */
+.back-link {
+	display: inline-block;
+	margin-top: 3.5rem;
+	padding-top: 1.5rem;
+	border-top: 1px solid var(--pico-muted-border-color);
+	width: 100%;
+	color: var(--pico-muted-color);
+	text-decoration: none;
+	font-size: 0.9rem;
+}
+.back-link:hover {
+	color: var(--pico-primary);
+}
+
+/* ============================================================
+   Small-screen refinements
+   ============================================================ */
+
+/* tablets / large phones */
+@media (max-width: 640px) {
+	:root {
+		--pico-font-size: 16.5px;
+		--pico-spacing: 1rem;
+	}
+	body > header.container {
+		padding-top: 1.25rem;
+		padding-bottom: 1.25rem;
+	}
+	body > footer.container {
+		padding-bottom: 1.75rem;
+	}
+	.post-header {
+		margin-bottom: 1.75rem;
+	}
+	.post-content h2 {
+		margin-top: 2rem;
+	}
+	.back-link {
+		margin-top: 2.5rem;
+	}
+}
+
+/* very small phones */
+@media (max-width: 380px) {
+	:root {
+		--pico-font-size: 16px;
+	}
+	.posts-grid li {
+		flex-wrap: wrap;
+		gap: 0.1rem;
+	}
+}
+
+/* ============================================================
+   Game of Life embed
+   ============================================================ */
+
 #board {
 	display: block;
 	max-width: 100%;
 	height: auto;
-	margin: 1rem 0;
+	margin: 1.5rem 0;
 	border: 1px solid var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+}
+#pauseButton {
+	width: auto;
 }
