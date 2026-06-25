@@ -26,7 +26,21 @@ import (
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	posts, err := s.store.ListPosts(ctx, false)
+	var (
+		posts []Post
+		err   error
+	)
+
+	tagsFilter := r.URL.Query()["tag"]
+
+	if len(tagsFilter) > 0 {
+		posts, err = s.store.ListPostsByTag(ctx, ListPostsByTagParams{
+			TagNames:   tagsFilter,
+			IncludeAll: true,
+		})
+	} else {
+		posts, err = s.store.ListPosts(ctx, false)
+	}
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list posts", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -41,7 +55,6 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	}
 
 	en, fa := groupPostsByLanguageAndYear(posts)
-
 	render(w, r, PostsIndexPage(en, fa, tags))
 }
 

@@ -5,7 +5,6 @@ CREATE TABLE IF NOT EXISTS posts (
     slug          TEXT NOT NULL UNIQUE,
     cover_image   TEXT,
     language      TEXT NOT NULL CHECK (language IN ('en', 'fa')),
-    is_favorite   BOOLEAN NOT NULL DEFAULT false,
     version       INTEGER NOT NULL DEFAULT 1,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     published_at  DATETIME,
@@ -15,8 +14,7 @@ CREATE TABLE IF NOT EXISTS posts (
 
 CREATE TABLE IF NOT EXISTS tags (
     id    INTEGER PRIMARY KEY,
-    name  TEXT NOT NULL UNIQUE,
-    slug  TEXT NOT NULL UNIQUE
+    name  TEXT NOT NULL UNIQUE
 );
 
 

@@ -2,6 +2,7 @@ package post
 
 import (
 	"blog/internal/ui"
+	"net/url"
 	"strconv"
 )
 
@@ -20,7 +21,7 @@ templ PostsIndexPage(
 				<ul>
 					for _, tag := range tags {
 						<li>
-							<a href={ templ.URL("/tag/" + tag.Slug) }>
+							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag.Name)) } class="tag">
 								{ tag.Name }
 							</a>
 						</li>

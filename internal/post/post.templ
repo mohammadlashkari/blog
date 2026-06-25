@@ -1,6 +1,9 @@
 package post
 
-import "blog/internal/ui"
+import (
+	"blog/internal/ui"
+	"net/url"
+)
 
 templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Component) {
 	@ui.Layout(post.Title) {
@@ -15,7 +18,7 @@ templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Compon
 				if len(tags) > 0 {
 					<div class="post-tags">
 						for _, tag := range tags {
-							<a href={ templ.URL("/tag/" + tag.Slug) } class="tag">
+							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag.Name)) } class="tag">
 								{ tag.Name }
 							</a>
 						}

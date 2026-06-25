@@ -3,4 +3,10 @@ Add resume download
 Add Vazir font
 Add cache layer
 Shutdown handle
-
+Farsi dates
+Search
+Tag filter
+Pagination
+Add photo
+RSS
+Add DB index

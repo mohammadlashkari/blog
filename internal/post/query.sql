@@ -7,6 +7,17 @@ WHERE (
 )
 ORDER BY published_at DESC;
 
+-- name: ListPostsByTag :many
+SELECT DISTINCT posts.*
+FROM posts
+JOIN post_tags post_tags ON posts.id = post_tags.post_id
+JOIN tags ON post_tags.tag_id = tags.id
+WHERE tags.name IN (sqlc.slice(tag_names))
+AND (
+    posts.published_at IS NOT NULL 
+    OR CAST(@include_all AS BOOLEAN) = TRUE
+)
+ORDER BY posts.published_at DESC;
 
 -- name: ListTags :many
 SELECT * FROM tags;
@@ -35,14 +46,3 @@ JOIN post_tags ON post_tags.tag_id = tags.id
 WHERE post_tags.post_id = ?
 ORDER BY tags.name;
 
--- name: PostsByTagSlug :many
-SELECT posts.*
-FROM posts
-JOIN post_tags post_tags ON posts.id = post_tags.post_id
-JOIN tags ON post_tags.tag_id = tags.id
-WHERE tags.slug = ?
-AND (
-    posts.published_at IS NOT NULL 
-    OR CAST(@include_all AS BOOLEAN) = TRUE
-)
-ORDER BY posts.published_at DESC;

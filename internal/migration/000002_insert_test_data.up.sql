@@ -77,56 +77,56 @@ INSERT INTO posts (
     );
 
 
-INSERT INTO tags (name, slug) VALUES
-('general', 'general'),
-('go', 'go'),
-('database', 'database'),
-('sqlc', 'sqlc'),
-('linux', 'linux'),
-('life', 'life'),
-('blog', 'blog'),
-('farsi', 'farsi'),
-('programming', 'programming');
+INSERT INTO tags (name) VALUES
+('general'),
+('go'),
+('database'),
+('sqlc'),
+('linux'),
+('life'),
+('blog'),
+('farsi'),
+('programming');
 
 INSERT INTO post_tags (post_id, tag_id) VALUES (
     (SELECT id FROM posts WHERE slug = 'my-first-post'),
-    (SELECT id FROM tags WHERE slug = 'general')
+    (SELECT id FROM tags WHERE name = 'general')
 );
 
 INSERT INTO post_tags (post_id, tag_id) VALUES
 ((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE slug = 'go')),
+ (SELECT id FROM tags WHERE name = 'go')),
 ((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE slug = 'sqlc')),
+ (SELECT id FROM tags WHERE name = 'sqlc')),
 ((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE slug = 'database'));
+ (SELECT id FROM tags WHERE name = 'database'));
 
 INSERT INTO post_tags (post_id, tag_id) VALUES
 ((SELECT id FROM posts WHERE slug = 'switch-to-linux'),
- (SELECT id FROM tags WHERE slug = 'linux')),
+ (SELECT id FROM tags WHERE name = 'linux')),
 ((SELECT id FROM posts WHERE slug = 'switch-to-linux'),
- (SELECT id FROM tags WHERE slug = 'life'));
+ (SELECT id FROM tags WHERE name = 'life'));
 
 INSERT INTO post_tags (post_id, tag_id) VALUES
 ((SELECT id FROM posts WHERE slug = 'simple-blog-engine'),
- (SELECT id FROM tags WHERE slug = 'go')),
+ (SELECT id FROM tags WHERE name = 'go')),
 ((SELECT id FROM posts WHERE slug = 'simple-blog-engine'),
- (SELECT id FROM tags WHERE slug = 'blog')),
+ (SELECT id FROM tags WHERE name = 'blog')),
 ((SELECT id FROM posts WHERE slug = 'simple-blog-engine'),
- (SELECT id FROM tags WHERE slug = 'programming'));
+ (SELECT id FROM tags WHERE name = 'programming'));
 
 INSERT INTO post_tags (post_id, tag_id) VALUES
 ((SELECT id FROM posts WHERE slug = 'first-farsi-post'),
- (SELECT id FROM tags WHERE slug = 'farsi')),
+ (SELECT id FROM tags WHERE name = 'farsi')),
 ((SELECT id FROM posts WHERE slug = 'why-linux-fa'),
- (SELECT id FROM tags WHERE slug = 'linux')),
+ (SELECT id FROM tags WHERE name = 'linux')),
 ((SELECT id FROM posts WHERE slug = 'why-linux-fa'),
- (SELECT id FROM tags WHERE slug = 'life')),
+ (SELECT id FROM tags WHERE name = 'life')),
 ((SELECT id FROM posts WHERE slug = 'sqlc-go-fa'),
- (SELECT id FROM tags WHERE slug = 'go')),
+ (SELECT id FROM tags WHERE name = 'go')),
 ((SELECT id FROM posts WHERE slug = 'sqlc-go-fa'),
- (SELECT id FROM tags WHERE slug = 'sqlc')),
+ (SELECT id FROM tags WHERE name = 'sqlc')),
 ((SELECT id FROM posts WHERE slug = 'simple-blog-fa'),
- (SELECT id FROM tags WHERE slug = 'blog')),
+ (SELECT id FROM tags WHERE name = 'blog')),
 ((SELECT id FROM posts WHERE slug = 'simple-blog-fa'),
- (SELECT id FROM tags WHERE slug = 'farsi'));
+ (SELECT id FROM tags WHERE name = 'farsi'));

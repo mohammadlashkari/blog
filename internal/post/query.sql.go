@@ -7,10 +7,11 @@ package post
 
 import (
 	"context"
+	"strings"
 )
 
 const listPosts = `-- name: ListPosts :many
-SELECT id, filename, title, slug, cover_image, language, is_favorite, version, created_at, published_at, updated_at
+SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at
 FROM posts
 WHERE (
     published_at IS NOT NULL 
@@ -35,7 +36,69 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 			&i.Slug,
 			&i.CoverImage,
 			&i.Language,
-			&i.IsFavorite,
+			&i.Version,
+			&i.CreatedAt,
+			&i.PublishedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listPostsByTag = `-- name: ListPostsByTag :many
+SELECT DISTINCT posts.id, posts.filename, posts.title, posts.slug, posts.cover_image, posts.language, posts.version, posts.created_at, posts.published_at, posts.updated_at
+FROM posts
+JOIN post_tags post_tags ON posts.id = post_tags.post_id
+JOIN tags ON post_tags.tag_id = tags.id
+WHERE tags.name IN (/*SLICE:tag_names*/?)
+AND (
+    posts.published_at IS NOT NULL 
+    OR CAST(?2 AS BOOLEAN) = TRUE
+)
+ORDER BY posts.published_at DESC
+`
+
+type ListPostsByTagParams struct {
+	TagNames   []string `json:"tag_names"`
+	IncludeAll bool     `json:"include_all"`
+}
+
+func (q *Queries) ListPostsByTag(ctx context.Context, arg ListPostsByTagParams) ([]Post, error) {
+	query := listPostsByTag
+	var queryParams []interface{}
+	if len(arg.TagNames) > 0 {
+		for _, v := range arg.TagNames {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:tag_names*/?", strings.Repeat(",?", len(arg.TagNames))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:tag_names*/?", "NULL", 1)
+	}
+	queryParams = append(queryParams, arg.IncludeAll)
+	rows, err := q.db.QueryContext(ctx, query, queryParams...)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Post
+	for rows.Next() {
+		var i Post
+		if err := rows.Scan(
+			&i.ID,
+			&i.Filename,
+			&i.Title,
+			&i.Slug,
+			&i.CoverImage,
+			&i.Language,
 			&i.Version,
 			&i.CreatedAt,
 			&i.PublishedAt,
@@ -55,7 +118,7 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 }
 
 const listTags = `-- name: ListTags :many
-SELECT id, name, slug FROM tags
+SELECT id, name FROM tags
 `
 
 func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
@@ -67,7 +130,7 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 	var items []Tag
 	for rows.Next() {
 		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name, &i.Slug); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -82,7 +145,7 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 }
 
 const postByID = `-- name: PostByID :one
-SELECT id, filename, title, slug, cover_image, language, is_favorite, version, created_at, published_at, updated_at FROM posts 
+SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at FROM posts 
 WHERE id = ?
 AND (
     published_at IS NOT NULL 
@@ -105,7 +168,6 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 		&i.Slug,
 		&i.CoverImage,
 		&i.Language,
-		&i.IsFavorite,
 		&i.Version,
 		&i.CreatedAt,
 		&i.PublishedAt,
@@ -115,7 +177,7 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 }
 
 const postBySlug = `-- name: PostBySlug :one
-SELECT id, filename, title, slug, cover_image, language, is_favorite, version, created_at, published_at, updated_at FROM posts
+SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at FROM posts
 WHERE slug = ?
 AND (
     published_at IS NOT NULL 
@@ -138,7 +200,6 @@ func (q *Queries) PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, e
 		&i.Slug,
 		&i.CoverImage,
 		&i.Language,
-		&i.IsFavorite,
 		&i.Version,
 		&i.CreatedAt,
 		&i.PublishedAt,
@@ -147,61 +208,8 @@ func (q *Queries) PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, e
 	return i, err
 }
 
-const postsByTagSlug = `-- name: PostsByTagSlug :many
-SELECT posts.id, posts.filename, posts.title, posts.slug, posts.cover_image, posts.language, posts.is_favorite, posts.version, posts.created_at, posts.published_at, posts.updated_at
-FROM posts
-JOIN post_tags post_tags ON posts.id = post_tags.post_id
-JOIN tags ON post_tags.tag_id = tags.id
-WHERE tags.slug = ?
-AND (
-    posts.published_at IS NOT NULL 
-    OR CAST(? AS BOOLEAN) = TRUE
-)
-ORDER BY posts.published_at DESC
-`
-
-type PostsByTagSlugParams struct {
-	Slug       string `json:"slug"`
-	IncludeAll bool   `json:"include_all"`
-}
-
-func (q *Queries) PostsByTagSlug(ctx context.Context, arg PostsByTagSlugParams) ([]Post, error) {
-	rows, err := q.db.QueryContext(ctx, postsByTagSlug, arg.Slug, arg.IncludeAll)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Post
-	for rows.Next() {
-		var i Post
-		if err := rows.Scan(
-			&i.ID,
-			&i.Filename,
-			&i.Title,
-			&i.Slug,
-			&i.CoverImage,
-			&i.Language,
-			&i.IsFavorite,
-			&i.Version,
-			&i.CreatedAt,
-			&i.PublishedAt,
-			&i.UpdatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const tagsByPostID = `-- name: TagsByPostID :many
-SELECT tags.id, tags.name, tags.slug
+SELECT tags.id, tags.name
 FROM tags
 JOIN post_tags ON post_tags.tag_id = tags.id
 WHERE post_tags.post_id = ?
@@ -217,7 +225,7 @@ func (q *Queries) TagsByPostID(ctx context.Context, postID int64) ([]Tag, error)
 	var items []Tag
 	for rows.Next() {
 		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name, &i.Slug); err != nil {
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
 			return nil, err
 		}
 		items = append(items, i)

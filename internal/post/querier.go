@@ -10,10 +10,10 @@ import (
 
 type Querier interface {
 	ListPosts(ctx context.Context, includeAll bool) ([]Post, error)
+	ListPostsByTag(ctx context.Context, arg ListPostsByTagParams) ([]Post, error)
 	ListTags(ctx context.Context) ([]Tag, error)
 	PostByID(ctx context.Context, arg PostByIDParams) (Post, error)
 	PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, error)
-	PostsByTagSlug(ctx context.Context, arg PostsByTagSlugParams) ([]Post, error)
 	TagsByPostID(ctx context.Context, postID int64) ([]Tag, error)
 }
 
