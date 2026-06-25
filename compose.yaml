@@ -1,0 +1,22 @@
+services:
+  server:
+    image: ghcr.io/mohammadlashkari/blog/blog
+    container_name: blog
+    restart: unless-stopped
+    ports:
+      - "2026:2026"
+    environment:
+      PORT: "2026"
+      SQLITE_PATH: "/data/blog.db"
+      LIMITER_RPS: "10"
+      LIMITER_BURST: "20"
+      LIMITER_ENABLE: "true"
+      LOCAL_CONTENT_REPO: "/data/blog-content"
+      REMOTE_CONTENT_REPO: "https://github.com/mohammadlashkari/blog-content.git"
+      WEBHOOK_SECRET: "secret"
+
+    volumes:
+      - blog-data:/data
+
+volumes:
+  blog-data:

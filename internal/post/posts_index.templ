@@ -34,7 +34,13 @@ templ PostsIndexPage(
 				<!-- English -->
 				<section>
 					for _, group := range english {
-						<h3>{ strconv.Itoa(group.year) }</h3>
+						<h3>
+							if group.isUnpublished {
+								Unpublished
+							} else {
+								{ strconv.Itoa(group.year) }
+							}
+						</h3>
 						<ul>
 							for _, post := range group.posts {
 								<li>
@@ -42,7 +48,7 @@ templ PostsIndexPage(
 										{ post.Title }
 									</a>
 									<small class="post-date">
-										{ post.PublishedAt.Format("02 Jan") }
+										{ post.DisplayDate }
 									</small>
 								</li>
 							}
@@ -52,7 +58,11 @@ templ PostsIndexPage(
 				<!-- Farsi -->
 				<section dir="rtl">
 					for _, group := range persian {
-						<h3>{ strconv.Itoa(group.year) }</h3>
+						if group.isUnpublished {
+							منتشر نشده
+						} else {
+							{ strconv.Itoa(group.year) }
+						}
 						<ul>
 							for _, post := range group.posts {
 								<li>
@@ -60,7 +70,7 @@ templ PostsIndexPage(
 										{ post.Title }
 									</a>
 									<small class="post-date">
-										{ post.PublishedAt.Format("02 Jan") }
+										{ post.DisplayDate }
 									</small>
 								</li>
 							}

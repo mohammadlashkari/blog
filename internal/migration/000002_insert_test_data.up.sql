@@ -24,7 +24,7 @@ INSERT INTO posts (
         'switch-to-linux.md',
         'switch-to-linux',
         'en',
-        datetime('now', '-1 year', '-3 months')
+        NULL
     ),
     (
         'Building a simple blog engine',
@@ -45,7 +45,7 @@ INSERT INTO posts (
         'first-farsi-post.md',
         'first-farsi-post',
         'fa',
-        datetime('now', '-2 years', '-1 month')
+        NULL
     ),
     (
         'چرا به لینوکس مهاجرت کردم',

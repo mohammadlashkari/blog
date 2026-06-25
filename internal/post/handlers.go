@@ -39,7 +39,7 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 			IncludeAll: true,
 		})
 	} else {
-		posts, err = s.store.ListPosts(ctx, false)
+		posts, err = s.store.ListPosts(ctx, true)
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list posts", "error", err)

@@ -7,6 +7,7 @@ import (
 	"slices"
 
 	"github.com/a-h/templ"
+	"github.com/mshafiee/jalali"
 )
 
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
@@ -18,40 +19,79 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	}
 }
 
+type PostUI struct {
+	Post
+	DisplayDate string
+}
+
 type yearGroup struct {
-	year  int
-	posts []Post
+	isUnpublished bool
+	year          int
+	posts         []PostUI
 }
 
 // Posts are already sorted by PublishedAt in descending order
 func groupPostsByLanguageAndYear(posts []Post) (en, fa []yearGroup) {
-	enGroups := make(map[int][]Post)
-	faGroups := make(map[int][]Post)
+	enGroups := make(map[int][]PostUI)
+	faGroups := make(map[int][]PostUI)
+
+	var enUnpublished []PostUI
+	var faUnpublished []PostUI
 
 	for _, p := range posts {
-		if p.PublishedAt == nil {
-			continue
-		}
-		year := p.PublishedAt.Year()
+
+		uiPost := PostUI{Post: p}
+
 		switch p.Language {
 		case LanguageEn:
-			enGroups[year] = append(enGroups[year], p)
+
+			if p.PublishedAt == nil {
+				uiPost.DisplayDate = "Draft"
+				enUnpublished = append(enUnpublished, uiPost)
+			} else {
+				uiPost.DisplayDate = p.PublishedAt.Format("02 Jan")
+				year := p.PublishedAt.Year()
+				enGroups[year] = append(enGroups[year], uiPost)
+			}
+
 		case LanguageFa:
-			faGroups[year] = append(faGroups[year], p)
+
+			if p.PublishedAt == nil {
+				uiPost.DisplayDate = "پیش‌نویس"
+				faUnpublished = append(faUnpublished, uiPost)
+			} else {
+				jt := jalali.ToJalali(*p.PublishedAt)
+				uiPost.DisplayDate = jt.Format("%d %B")
+				year := jt.Year()
+				faGroups[year] = append(faGroups[year], uiPost)
+			}
 		}
 	}
 
-	return buildYearGroups(enGroups), buildYearGroups(faGroups)
+	// Build standard groups
+	en = buildYearGroups(enGroups)
+	fa = buildYearGroups(faGroups)
+
+	if len(enUnpublished) > 0 {
+		en = append([]yearGroup{{isUnpublished: true, posts: enUnpublished}}, en...)
+	}
+	if len(faUnpublished) > 0 {
+		fa = append([]yearGroup{{isUnpublished: true, posts: faUnpublished}}, fa...)
+	}
+
+	return en, fa
 }
 
-func buildYearGroups(groups map[int][]Post) []yearGroup {
+func buildYearGroups(groups map[int][]PostUI) []yearGroup {
 	yg := make([]yearGroup, 0, len(groups))
 	for y, ps := range groups {
 		yg = append(yg, yearGroup{year: y, posts: ps})
 	}
+
 	slices.SortFunc(yg, func(a, b yearGroup) int {
 		return cmp.Compare(b.year, a.year)
 	})
+
 	return yg
 }
 
