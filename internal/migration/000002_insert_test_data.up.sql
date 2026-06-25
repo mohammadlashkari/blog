@@ -45,14 +45,14 @@ INSERT INTO posts (
         'first-farsi-post.md',
         'first-farsi-post',
         'fa',
-        NULL
+        datetime('now', '-20 months')
     ),
     (
         'چرا به لینوکس مهاجرت کردم',
         'why-linux-fa.md',
         'why-linux-fa',
         'fa',
-        datetime('now', '-1 year', '-6 months')
+        NULL
     ),
     (
         'آموزش ساده SQLC در Go',

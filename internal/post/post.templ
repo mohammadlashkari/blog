@@ -5,14 +5,12 @@ import (
 	"net/url"
 )
 
-templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Component) {
+templ PostPage(post uiPost, tags []Tag, htmlContent string, component templ.Component) {
 	@ui.Layout(post.Title) {
 		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
 			<header class="post-header">
 				<div class="post-date">
-					if post.PublishedAt != nil {
-						{ post.PublishedAt.Format("02 January 2006") }
-					}
+					{ post.DisplayDate }
 				</div>
 				<h1 class="post-title">{ post.Title }</h1>
 				if len(tags) > 0 {
@@ -31,7 +29,6 @@ templ PostPage(post Post, tags []Tag, htmlContent string, component templ.Compon
 			if component != nil {
 				@component
 			}
-			<a href="/posts" class="back-link">← Back to blog</a>
 		</article>
 	}
 }

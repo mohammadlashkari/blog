@@ -114,11 +114,12 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 	contentHTML := buf.String()
 
 	var component templ.Component
-	if post.Slug == "game-of-life" {
+	if post.Slug == "why-linux-fa" {
 		component = ui.GameOfLifeEmbed()
 	}
 
-	render(w, r, PostPage(post, tags, contentHTML, component))
+	uiPost := buildUIPost(post)
+	render(w, r, PostPage(uiPost, tags, contentHTML, component))
 }
 
 type GitHubPushPayload struct {

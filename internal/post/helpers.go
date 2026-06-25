@@ -19,7 +19,7 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	}
 }
 
-type PostUI struct {
+type uiPost struct {
 	Post
 	DisplayDate string
 }
@@ -27,20 +27,20 @@ type PostUI struct {
 type yearGroup struct {
 	isUnpublished bool
 	year          int
-	posts         []PostUI
+	posts         []uiPost
 }
 
 // Posts are already sorted by PublishedAt in descending order
 func groupPostsByLanguageAndYear(posts []Post) (en, fa []yearGroup) {
-	enGroups := make(map[int][]PostUI)
-	faGroups := make(map[int][]PostUI)
+	enGroups := make(map[int][]uiPost)
+	faGroups := make(map[int][]uiPost)
 
-	var enUnpublished []PostUI
-	var faUnpublished []PostUI
+	var enUnpublished []uiPost
+	var faUnpublished []uiPost
 
 	for _, p := range posts {
 
-		uiPost := PostUI{Post: p}
+		uiPost := uiPost{Post: p}
 
 		switch p.Language {
 		case LanguageEn:
@@ -82,7 +82,7 @@ func groupPostsByLanguageAndYear(posts []Post) (en, fa []yearGroup) {
 	return en, fa
 }
 
-func buildYearGroups(groups map[int][]PostUI) []yearGroup {
+func buildYearGroups(groups map[int][]uiPost) []yearGroup {
 	yg := make([]yearGroup, 0, len(groups))
 	for y, ps := range groups {
 		yg = append(yg, yearGroup{year: y, posts: ps})
@@ -93,6 +93,29 @@ func buildYearGroups(groups map[int][]PostUI) []yearGroup {
 	})
 
 	return yg
+}
+
+func buildUIPost(p Post) uiPost {
+	uiPost := uiPost{Post: p}
+
+	switch p.Language {
+	case LanguageEn:
+		if p.PublishedAt == nil {
+			uiPost.DisplayDate = "Draft"
+		} else {
+			uiPost.DisplayDate = p.PublishedAt.Format("02 January 2006")
+		}
+
+	case LanguageFa:
+		if p.PublishedAt == nil {
+			uiPost.DisplayDate = "پیش‌نویس"
+		} else {
+			jt := jalali.ToJalali(*p.PublishedAt)
+			uiPost.DisplayDate = jt.Format("%d %B %y")
+		}
+	}
+
+	return uiPost
 }
 
 func dirOf(l Language) string {
