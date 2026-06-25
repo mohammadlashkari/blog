@@ -426,6 +426,11 @@ article.post {
 	}
 }
 
+.about-links {
+	display: flex;
+	gap: 10px;
+}
+
 /* very small phones */
 @media (max-width: 380px) {
 	:root {

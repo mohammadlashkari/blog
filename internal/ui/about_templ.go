@@ -41,7 +41,7 @@ func AboutPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"container post\"><h1>About</h1><p>Hi, I'm Mohammad Lashkari — a software engineer. I write here about things I build, notes to my future self, and the occasional experiment.</p></article>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"container post\"><h1>About</h1><div class=\"about-image\"><img src=\"/static/img/avatar.jpg\" alt=\"Mohammad\" loading=\"lazy\"></div><br><p>Hi, I'm Mohammad Lashkari — a software engineer. I write here about things I build, notes to my future self, and the occasional experiment.</p><div class=\"about-links\"><a href=\"mailto:moe.lashkari@gmail.com\">Gmail</a> <a href=\"https://github.com/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> <a href=\"https://www.linkedin.com/in/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\">LinkedIn</a> <a href=\"/static/resume.pdf\" download class=\"button\">Resume</a></div></article>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
