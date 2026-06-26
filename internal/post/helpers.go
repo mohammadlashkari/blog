@@ -1,6 +1,7 @@
 package post
 
 import (
+	"bytes"
 	"cmp"
 	"log/slog"
 	"net/http"
@@ -61,7 +62,7 @@ func groupPostsByLanguageAndYear(posts []Post) (en, fa []yearGroup) {
 				faUnpublished = append(faUnpublished, uiPost)
 			} else {
 				jt := jalali.ToJalali(*p.PublishedAt)
-				uiPost.DisplayDate = jt.Format("%d %B")
+				uiPost.DisplayDate = farsiNum(jt.Format("%d %B"))
 				year := jt.Year()
 				faGroups[year] = append(faGroups[year], uiPost)
 			}
@@ -111,11 +112,24 @@ func buildUIPost(p Post) uiPost {
 			uiPost.DisplayDate = "پیش‌نویس"
 		} else {
 			jt := jalali.ToJalali(*p.PublishedAt)
-			uiPost.DisplayDate = jt.Format("%d %B %y")
+			uiPost.DisplayDate = farsiNum(jt.Format("%d %B %Y"))
 		}
 	}
 
 	return uiPost
+}
+
+func farsiNum(s string) string {
+	var buf bytes.Buffer
+
+	for _, r := range s {
+		if r >= '0' && r <= '9' {
+			r = '۰' + (r - '0')
+		}
+		buf.WriteRune(r)
+	}
+
+	return buf.String()
 }
 
 func dirOf(l Language) string {

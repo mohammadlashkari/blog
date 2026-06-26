@@ -1,12 +1,13 @@
 Add admin only endpoints
 - Add resume download
-Add Vazir font
+- Add Vazir font
 Add cache layer
 Shutdown handle
 - Farsi dates
 Search
 - Tag filter
 Pagination
-Add photo
+- Add photo
+- Farsi number
 RSS
 Add DB index
