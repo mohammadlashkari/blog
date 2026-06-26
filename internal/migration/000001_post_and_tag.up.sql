@@ -5,6 +5,8 @@ CREATE TABLE IF NOT EXISTS posts (
     slug          TEXT NOT NULL UNIQUE,
     cover_image   TEXT,
     language      TEXT NOT NULL CHECK (language IN ('en', 'fa')),
+    is_favorite   BOOLEAN NOT NULL DEFAULT false,
+    content_hash  TEXT,
     version       INTEGER NOT NULL DEFAULT 1,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     published_at  DATETIME,

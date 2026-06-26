@@ -11,3 +11,14 @@ Pagination
 - Farsi number
 RSS
 Add DB index
+
+Correct model
+slug = identity
+file path = storage location
+
+
+content/
+  posts/
+    <slug>/
+      index.md
+      assets/

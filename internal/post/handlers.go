@@ -5,22 +5,27 @@ import (
 	"bytes"
 	"context"
 	"crypto/hmac"
+	"crypto/md5"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
+	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/yuin/goldmark/parser"
+	"gopkg.in/yaml.v3"
 )
 
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
@@ -178,9 +183,148 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 			)
 			return
 		}
-
 		slog.InfoContext(ctx, "git pull succeeded")
+
+		posts, err := s.store.ListPosts(ctx, true)
+		if err != nil {
+			panic(err)
+		}
+
+		dbPosts := make(map[string]string, len(posts))
+		for _, p := range posts {
+			dbPosts[p.Slug] = ""
+		}
+
+		fsPosts := make(map[string]string, len(posts))
+		for _, p := range posts {
+			dbPosts[p.Slug] = ""
+		}
+
+		// add to db ?
+		// read all the content
+		// if hash_content changed -> upsert
+
+		// parserCtx := parser.NewContext()
+		// var buf bytes.Buffer
+		// if err := s.md.Convert(contentMD, &buf, parser.WithContext(parserCtx)); err != nil {
+		// }
+
 	}()
+}
+
+type FrontMatter struct {
+	Name        string
+	Age         int
+	currentHash [md5.Size]byte
+}
+
+type result struct {
+	fm  *FrontMatter
+	err error
+}
+
+func getFMs(root string, total int) ([]*FrontMatter, error) {
+	done := make(chan struct{})
+	defer close(done)
+
+	paths, errc := walkRepo(done, root)
+
+	const numWorkers = 20
+	result := make(chan result)
+
+	var wg sync.WaitGroup
+	for range numWorkers {
+		wg.Go(func() {
+			getFm(done, paths, result)
+		})
+	}
+
+	go func() {
+		wg.Wait()
+		close(result)
+	}()
+
+	fms := []*FrontMatter{}
+	for r := range result {
+		if r.err != nil {
+			return nil, r.err
+		}
+
+		fms = append(fms, r.fm)
+	}
+
+	if err := <-errc; err != nil {
+		return nil, err
+	}
+
+	return fms, nil
+
+}
+
+func walkRepo(done <-chan struct{}, root string) (<-chan string, <-chan error) {
+	var (
+		paths = make(chan string)
+		errc  = make(chan error, 1)
+	)
+
+	go func() {
+		defer close(paths)
+
+		errc <- filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+
+			if !d.Type().IsRegular() || filepath.Ext(path) != ".md" {
+				return nil
+			}
+
+			select {
+			case paths <- path:
+				return nil
+			case <-done:
+				return errors.New("walked canceled")
+			}
+
+		})
+	}()
+
+	return paths, errc
+}
+
+func getFm(done <-chan struct{}, paths <-chan string, c chan<- result) {
+	for path := range paths {
+		fm, err := decodeFM(path)
+		select {
+		case c <- result{fm, err}:
+		case <-done:
+			return
+		}
+	}
+}
+
+func decodeFM(path string) (*FrontMatter, error) {
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return nil, err
+	}
+	hash := md5.Sum(data)
+
+	parts := bytes.SplitN(data, []byte("---\n"), 3)
+	if len(parts) < 3 {
+		return nil, fmt.Errorf("invalid %q post format", path)
+	}
+
+	fmBytes := parts[1]
+
+	var fm FrontMatter
+	if err := yaml.Unmarshal(fmBytes, &fm); err != nil {
+		return nil, err
+	}
+
+	fm.currentHash = hash
+
+	return &fm, nil
 }
 
 func verifyGitHubSignature(payload []byte, signature, secret string) bool {
