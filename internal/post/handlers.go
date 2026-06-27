@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"context"
 	"crypto/hmac"
-	"crypto/md5"
 	"crypto/sha256"
 	"database/sql"
 	"encoding/hex"
@@ -185,37 +184,54 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		slog.InfoContext(ctx, "git pull succeeded")
 
-		posts, err := s.store.ListPosts(ctx, true)
-		if err != nil {
-			panic(err)
-		}
-
-		dbPosts := make(map[string]string, len(posts))
-		for _, p := range posts {
-			dbPosts[p.Slug] = ""
-		}
-
-		fsPosts := make(map[string]string, len(posts))
-		for _, p := range posts {
-			dbPosts[p.Slug] = ""
-		}
-
-		// add to db ?
-		// read all the content
-		// if hash_content changed -> upsert
-
-		// parserCtx := parser.NewContext()
-		// var buf bytes.Buffer
-		// if err := s.md.Convert(contentMD, &buf, parser.WithContext(parserCtx)); err != nil {
-		// }
-
+		s.sync(ctx)
 	}()
 }
 
+func (s *Service) sync(ctx context.Context) error {
+	posts, err := s.store.ListPosts(ctx, true)
+	if err != nil {
+		return err
+	}
+
+	dbPosts := make(map[string]string, len(posts))
+	for _, p := range posts {
+		dbPosts[p.Slug] = p.ContentHash
+	}
+
+	fms, err := getFMs(s.cfg.LocalContentRepo)
+	if err != nil {
+		return err
+	}
+
+	fsPosts := make(map[string]string, len(posts))
+	for _, f := range fms {
+		fsPosts[f.slug] = f.contentHash
+	}
+
+	// Reconciliation
+	for slug, hash := range fsPosts {
+		dbHash, ok := dbPosts[slug]
+		if !ok {
+			// Insert
+		}
+		if hash != dbHash {
+			// Update
+		}
+	}
+
+	return nil
+}
+
 type FrontMatter struct {
-	Name        string
-	Age         int
-	currentHash [md5.Size]byte
+	filename    string     `yaml:"filename"`
+	title       string     `yaml:"title"`
+	slug        string     `yaml:"slug"`
+	language    Language   `yaml:"language"`
+	coverImage  *string    `yaml:"cover_image"`
+	publishedAt *time.Time `yaml:"published_at"`
+	tags        []string   `yaml:"tags"`
+	contentHash string
 }
 
 type result struct {
@@ -223,7 +239,7 @@ type result struct {
 	err error
 }
 
-func getFMs(root string, total int) ([]*FrontMatter, error) {
+func getFMs(root string) ([]*FrontMatter, error) {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -258,7 +274,6 @@ func getFMs(root string, total int) ([]*FrontMatter, error) {
 	}
 
 	return fms, nil
-
 }
 
 func walkRepo(done <-chan struct{}, root string) (<-chan string, <-chan error) {
@@ -304,11 +319,12 @@ func getFm(done <-chan struct{}, paths <-chan string, c chan<- result) {
 }
 
 func decodeFM(path string) (*FrontMatter, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // TODO: should i read chunk by chunk?
 	if err != nil {
 		return nil, err
 	}
-	hash := md5.Sum(data)
+	sum := sha256.Sum256(data)
+	hash := hex.EncodeToString(sum[:])
 
 	parts := bytes.SplitN(data, []byte("---\n"), 3)
 	if len(parts) < 3 {
@@ -322,7 +338,7 @@ func decodeFM(path string) (*FrontMatter, error) {
 		return nil, err
 	}
 
-	fm.currentHash = hash
+	fm.contentHash = hash
 
 	return &fm, nil
 }

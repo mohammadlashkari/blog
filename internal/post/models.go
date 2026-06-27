@@ -15,6 +15,8 @@ type Post struct {
 	Slug        string     `json:"slug"`
 	CoverImage  *string    `json:"cover_image"`
 	Language    Language   `json:"language"`
+	IsFavorite  bool       `json:"is_favorite"`
+	ContentHash string     `json:"content_hash"`
 	Version     int64      `json:"version"`
 	CreatedAt   time.Time  `json:"created_at"`
 	PublishedAt *time.Time `json:"published_at"`

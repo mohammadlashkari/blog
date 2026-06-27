@@ -11,7 +11,7 @@ import (
 )
 
 const listPosts = `-- name: ListPosts :many
-SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at
+SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at
 FROM posts
 WHERE (
     published_at IS NOT NULL 
@@ -36,6 +36,8 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 			&i.Slug,
 			&i.CoverImage,
 			&i.Language,
+			&i.IsFavorite,
+			&i.ContentHash,
 			&i.Version,
 			&i.CreatedAt,
 			&i.PublishedAt,
@@ -55,7 +57,7 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 }
 
 const listPostsByTag = `-- name: ListPostsByTag :many
-SELECT DISTINCT posts.id, posts.filename, posts.title, posts.slug, posts.cover_image, posts.language, posts.version, posts.created_at, posts.published_at, posts.updated_at
+SELECT DISTINCT posts.id, posts.filename, posts.title, posts.slug, posts.cover_image, posts.language, posts.is_favorite, posts.content_hash, posts.version, posts.created_at, posts.published_at, posts.updated_at
 FROM posts
 JOIN post_tags post_tags ON posts.id = post_tags.post_id
 JOIN tags ON post_tags.tag_id = tags.id
@@ -99,6 +101,8 @@ func (q *Queries) ListPostsByTag(ctx context.Context, arg ListPostsByTagParams) 
 			&i.Slug,
 			&i.CoverImage,
 			&i.Language,
+			&i.IsFavorite,
+			&i.ContentHash,
 			&i.Version,
 			&i.CreatedAt,
 			&i.PublishedAt,
@@ -145,7 +149,7 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 }
 
 const postByID = `-- name: PostByID :one
-SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at FROM posts 
+SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts 
 WHERE id = ?
 AND (
     published_at IS NOT NULL 
@@ -168,6 +172,8 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 		&i.Slug,
 		&i.CoverImage,
 		&i.Language,
+		&i.IsFavorite,
+		&i.ContentHash,
 		&i.Version,
 		&i.CreatedAt,
 		&i.PublishedAt,
@@ -177,7 +183,7 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 }
 
 const postBySlug = `-- name: PostBySlug :one
-SELECT id, filename, title, slug, cover_image, language, version, created_at, published_at, updated_at FROM posts
+SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts
 WHERE slug = ?
 AND (
     published_at IS NOT NULL 
@@ -200,6 +206,8 @@ func (q *Queries) PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, e
 		&i.Slug,
 		&i.CoverImage,
 		&i.Language,
+		&i.IsFavorite,
+		&i.ContentHash,
 		&i.Version,
 		&i.CreatedAt,
 		&i.PublishedAt,
