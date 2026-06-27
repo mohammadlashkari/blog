@@ -1,6 +1,5 @@
 CREATE TABLE IF NOT EXISTS posts (
     id            INTEGER PRIMARY KEY,
-    filename      TEXT NOT NULL UNIQUE,
     title         TEXT NOT NULL,
     slug          TEXT NOT NULL UNIQUE,
     cover_image   TEXT,

@@ -12,13 +12,9 @@ Pagination
 RSS
 Add DB index
 
-Correct model
-slug = identity
-file path = storage location
-
-
-content/
+blog-content/
   posts/
     <slug>/
       index.md
-      assets/
+      img_1.png
+      img_2.png

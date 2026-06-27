@@ -1,76 +1,65 @@
 INSERT INTO posts (
     title,
-    filename,
     slug,
     language,
     published_at
 ) VALUES 
     (
         'My first post',
-        'my-first-post.md',
         'my-first-post',
         'en',
         datetime('now', '-2 years')
     ),
     (
-        'Understanding SQLC with Go',
-        'sqlc-with-go.md',
-        'sqlc-with-go',
+        'GIT DIFF',
+        'git-diff',
         'en',
         datetime('now', '-18 months')
     ),
     (
         'Why I switched to Linux',
-        'switch-to-linux.md',
         'switch-to-linux',
         'en',
         NULL
     ),
     (
         'Building a simple blog engine',
-        'simple-blog-engine.md',
         'simple-blog-engine',
         'en',
         datetime('now', '-8 months')
     ),
     (
         'Working with Redis in Go',
-        'redis-go.md',
         'redis-go',
         'en',
         datetime('now', '-4 months')
     ),
     (
         'اولین نوشته من',
-        'first-farsi-post.md',
         'first-farsi-post',
         'fa',
         datetime('now', '-20 months')
     ),
     (
         'چرا به لینوکس مهاجرت کردم',
-        'why-linux-fa.md',
         'why-linux-fa',
         'fa',
         NULL
     ),
     (
         'آموزش ساده SQLC در Go',
-        'sqlc-go-fa.md',
         'sqlc-go-fa',
         'fa',
         datetime('now', '-10 months')
     ),
     (
         'ساخت یک وبلاگ ساده',
-        'simple-blog-fa.md',
         'simple-blog-fa',
         'fa',
         datetime('now', '-6 months')
     ),
     (
         'یادداشت‌های کوتاه برنامه‌نویسی',
-        'dev-notes-fa.md',
         'dev-notes-fa',
         'fa',
         datetime('now', '-2 months')
@@ -80,6 +69,7 @@ INSERT INTO posts (
 INSERT INTO tags (name) VALUES
 ('general'),
 ('go'),
+('git'),
 ('database'),
 ('sqlc'),
 ('linux'),
@@ -93,13 +83,10 @@ INSERT INTO post_tags (post_id, tag_id) VALUES (
     (SELECT id FROM tags WHERE name = 'general')
 );
 
-INSERT INTO post_tags (post_id, tag_id) VALUES
-((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE name = 'go')),
-((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE name = 'sqlc')),
-((SELECT id FROM posts WHERE slug = 'sqlc-with-go'),
- (SELECT id FROM tags WHERE name = 'database'));
+INSERT INTO post_tags (post_id, tag_id) VALUES(
+ (SELECT id FROM posts WHERE slug = 'git-diff'),
+ (SELECT id FROM tags WHERE name = 'git')
+);
 
 INSERT INTO post_tags (post_id, tag_id) VALUES
 ((SELECT id FROM posts WHERE slug = 'switch-to-linux'),

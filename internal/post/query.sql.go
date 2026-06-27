@@ -8,10 +8,35 @@ package post
 import (
 	"context"
 	"strings"
+	"time"
 )
 
+const addPostTag = `-- name: AddPostTag :exec
+INSERT OR IGNORE INTO post_tags (post_id, tag_id)
+VALUES (?, ?)
+`
+
+type AddPostTagParams struct {
+	PostID int64 `json:"post_id"`
+	TagID  int64 `json:"tag_id"`
+}
+
+func (q *Queries) AddPostTag(ctx context.Context, arg AddPostTagParams) error {
+	_, err := q.db.ExecContext(ctx, addPostTag, arg.PostID, arg.TagID)
+	return err
+}
+
+const deletePostTags = `-- name: DeletePostTags :exec
+DELETE FROM post_tags WHERE post_id = ?
+`
+
+func (q *Queries) DeletePostTags(ctx context.Context, postID int64) error {
+	_, err := q.db.ExecContext(ctx, deletePostTags, postID)
+	return err
+}
+
 const listPosts = `-- name: ListPosts :many
-SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at
+SELECT id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at
 FROM posts
 WHERE (
     published_at IS NOT NULL 
@@ -31,7 +56,6 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 		var i Post
 		if err := rows.Scan(
 			&i.ID,
-			&i.Filename,
 			&i.Title,
 			&i.Slug,
 			&i.CoverImage,
@@ -57,7 +81,7 @@ func (q *Queries) ListPosts(ctx context.Context, includeAll bool) ([]Post, error
 }
 
 const listPostsByTag = `-- name: ListPostsByTag :many
-SELECT DISTINCT posts.id, posts.filename, posts.title, posts.slug, posts.cover_image, posts.language, posts.is_favorite, posts.content_hash, posts.version, posts.created_at, posts.published_at, posts.updated_at
+SELECT DISTINCT posts.id, posts.title, posts.slug, posts.cover_image, posts.language, posts.is_favorite, posts.content_hash, posts.version, posts.created_at, posts.published_at, posts.updated_at
 FROM posts
 JOIN post_tags post_tags ON posts.id = post_tags.post_id
 JOIN tags ON post_tags.tag_id = tags.id
@@ -96,7 +120,6 @@ func (q *Queries) ListPostsByTag(ctx context.Context, arg ListPostsByTagParams) 
 		var i Post
 		if err := rows.Scan(
 			&i.ID,
-			&i.Filename,
 			&i.Title,
 			&i.Slug,
 			&i.CoverImage,
@@ -149,7 +172,7 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 }
 
 const postByID = `-- name: PostByID :one
-SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts 
+SELECT id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts 
 WHERE id = ?
 AND (
     published_at IS NOT NULL 
@@ -167,7 +190,6 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.Filename,
 		&i.Title,
 		&i.Slug,
 		&i.CoverImage,
@@ -183,7 +205,7 @@ func (q *Queries) PostByID(ctx context.Context, arg PostByIDParams) (Post, error
 }
 
 const postBySlug = `-- name: PostBySlug :one
-SELECT id, filename, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts
+SELECT id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts
 WHERE slug = ?
 AND (
     published_at IS NOT NULL 
@@ -201,7 +223,6 @@ func (q *Queries) PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, e
 	var i Post
 	err := row.Scan(
 		&i.ID,
-		&i.Filename,
 		&i.Title,
 		&i.Slug,
 		&i.CoverImage,
@@ -245,4 +266,74 @@ func (q *Queries) TagsByPostID(ctx context.Context, postID int64) ([]Tag, error)
 		return nil, err
 	}
 	return items, nil
+}
+
+const upsertPost = `-- name: UpsertPost :one
+INSERT INTO posts (
+  title,
+  slug,
+  cover_image,
+  language,
+  published_at,
+  content_hash
+)
+VALUES (?, ?, ?, ?, ?, ?)
+ON CONFLICT(slug) DO UPDATE SET
+  title = excluded.title,
+  cover_image = excluded.cover_image,
+  language = excluded.language,
+  published_at = excluded.published_at,
+  content_hash = excluded.content_hash,
+  version = posts.version + 1,
+  updated_at = CURRENT_TIMESTAMP
+RETURNING id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at
+`
+
+type UpsertPostParams struct {
+	Title       string     `json:"title"`
+	Slug        string     `json:"slug"`
+	CoverImage  *string    `json:"cover_image"`
+	Language    Language   `json:"language"`
+	PublishedAt *time.Time `json:"published_at"`
+	ContentHash string     `json:"content_hash"`
+}
+
+func (q *Queries) UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error) {
+	row := q.db.QueryRowContext(ctx, upsertPost,
+		arg.Title,
+		arg.Slug,
+		arg.CoverImage,
+		arg.Language,
+		arg.PublishedAt,
+		arg.ContentHash,
+	)
+	var i Post
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Slug,
+		&i.CoverImage,
+		&i.Language,
+		&i.IsFavorite,
+		&i.ContentHash,
+		&i.Version,
+		&i.CreatedAt,
+		&i.PublishedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const upsertTag = `-- name: UpsertTag :one
+INSERT INTO tags (name)
+VALUES (?)
+ON CONFLICT(name) DO UPDATE SET name = excluded.name
+RETURNING id, name
+`
+
+func (q *Queries) UpsertTag(ctx context.Context, name string) (Tag, error) {
+	row := q.db.QueryRowContext(ctx, upsertTag, name)
+	var i Tag
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
 }

@@ -14,6 +14,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"time"
 
 	"blog/internal/ui"
@@ -54,11 +55,16 @@ func main() {
 
 		cmd := exec.CommandContext(ctx, "git", "pull", "origin", "master")
 		cmd.Dir = cfg.LocalContentRepo
-		if output, err := cmd.CombinedOutput(); err != nil {
+		output, err := cmd.CombinedOutput()
+		if err != nil {
 			slog.ErrorContext(ctx, "git pull failed", "error", err, "output", string(output))
 			return
 		}
-		slog.InfoContext(ctx, "git pull succeeded")
+		if strings.Contains(string(output), "Already up to date") {
+			slog.InfoContext(ctx, "git pull succeeded already up to date")
+		} else {
+			slog.InfoContext(ctx, "git pull succeeded")
+		}
 	}()
 
 	db, err := openDB(ctx, cfg.DbPath)

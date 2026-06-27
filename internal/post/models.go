@@ -10,7 +10,6 @@ import (
 
 type Post struct {
 	ID          int64      `json:"id"`
-	Filename    string     `json:"filename"`
 	Title       string     `json:"title"`
 	Slug        string     `json:"slug"`
 	CoverImage  *string    `json:"cover_image"`

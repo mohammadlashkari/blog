@@ -94,7 +94,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	postPath := filepath.Join(s.cfg.LocalContentRepo, post.Filename)
+	postPath := filepath.Join(s.cfg.LocalContentRepo, post.Slug, "index.md") // TODO: check
 	contentMD, err := os.ReadFile(postPath)
 	if err != nil {
 		slog.ErrorContext(
@@ -184,7 +184,12 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		slog.InfoContext(ctx, "git pull succeeded")
 
-		s.sync(ctx)
+		if err := s.sync(ctx); err != nil {
+			slog.ErrorContext(ctx, "sync faield", "error", err)
+			return
+		}
+
+		slog.InfoContext(ctx, "sync succeeded")
 	}()
 }
 
@@ -194,44 +199,53 @@ func (s *Service) sync(ctx context.Context) error {
 		return err
 	}
 
-	dbPosts := make(map[string]string, len(posts))
+	dbPosts := make(map[string]Post, len(posts))
 	for _, p := range posts {
-		dbPosts[p.Slug] = p.ContentHash
+		dbPosts[p.Slug] = p
 	}
 
-	fms, err := getFMs(s.cfg.LocalContentRepo)
+	root := filepath.Join(s.cfg.LocalContentRepo, "posts")
+	fsPosts, err := fsPosts(root)
 	if err != nil {
 		return err
 	}
 
-	fsPosts := make(map[string]string, len(posts))
-	for _, f := range fms {
-		fsPosts[f.slug] = f.contentHash
-	}
-
 	// Reconciliation
-	for slug, hash := range fsPosts {
+	for slug, fm := range fsPosts {
 		dbHash, ok := dbPosts[slug]
-		if !ok {
-			// Insert
+
+		// No change
+		if ok && fm.ContentHash == dbHash.ContentHash {
+			slog.InfoContext(ctx, "no change", "slug", fm.Slug)
+		} else {
+			slog.InfoContext(ctx, "changed", "slug", fm.Slug)
+			_, err := s.store.UpsertPost(ctx, UpsertPostParams{
+				Slug:        slug,
+				Title:       fm.Title,
+				CoverImage:  &fm.CoverImage,
+				Language:    fm.Language,
+				ContentHash: fm.ContentHash,
+				PublishedAt: fm.PublishedAt,
+			})
+			if err != nil {
+				return err
+			}
 		}
-		if hash != dbHash {
-			// Update
-		}
+
+		delete(dbPosts, slug)
 	}
 
 	return nil
 }
 
 type FrontMatter struct {
-	filename    string     `yaml:"filename"`
-	title       string     `yaml:"title"`
-	slug        string     `yaml:"slug"`
-	language    Language   `yaml:"language"`
-	coverImage  *string    `yaml:"cover_image"`
-	publishedAt *time.Time `yaml:"published_at"`
-	tags        []string   `yaml:"tags"`
-	contentHash string
+	Title       string     `yaml:"title"`
+	Slug        string     `yaml:"slug"`
+	CoverImage  string     `yaml:"cover_image"`
+	Language    Language   `yaml:"language"`
+	PublishedAt *time.Time `yaml:"published_at"`
+	Tags        []string   `yaml:"tags"`
+	ContentHash string
 }
 
 type result struct {
@@ -239,7 +253,7 @@ type result struct {
 	err error
 }
 
-func getFMs(root string) ([]*FrontMatter, error) {
+func fsPosts(root string) (map[string]*FrontMatter, error) {
 	done := make(chan struct{})
 	defer close(done)
 
@@ -260,13 +274,13 @@ func getFMs(root string) ([]*FrontMatter, error) {
 		close(result)
 	}()
 
-	fms := []*FrontMatter{}
+	fms := map[string]*FrontMatter{}
 	for r := range result {
 		if r.err != nil {
-			return nil, r.err
+			return nil, r.err // TODO: should return?
 		}
 
-		fms = append(fms, r.fm)
+		fms[r.fm.Slug] = r.fm
 	}
 
 	if err := <-errc; err != nil {
@@ -290,7 +304,7 @@ func walkRepo(done <-chan struct{}, root string) (<-chan string, <-chan error) {
 				return err
 			}
 
-			if !d.Type().IsRegular() || filepath.Ext(path) != ".md" {
+			if !d.Type().IsRegular() || filepath.Base(path) != "index.md" {
 				return nil
 			}
 
@@ -338,7 +352,7 @@ func decodeFM(path string) (*FrontMatter, error) {
 		return nil, err
 	}
 
-	fm.contentHash = hash
+	fm.ContentHash = hash
 
 	return &fm, nil
 }
