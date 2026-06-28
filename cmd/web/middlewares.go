@@ -119,8 +119,17 @@ func rateLimit(cfg *config.Config) func(http.Handler) http.Handler {
 func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+
+			cookie, err := r.Cookie(authCookie)
+			if err != nil {
+				slog.ErrorContext(ctx, "cookie error", "error", err)
+				return
+			}
+			_ = cookie
+
 			// check the cookie
-			ctx := context.WithValue(r.Context(), "isAdmin", true)
+			ctx = context.WithValue(r.Context(), "isAdmin", true)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

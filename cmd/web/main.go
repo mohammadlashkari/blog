@@ -85,7 +85,7 @@ func main() {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/posts", http.StatusFound)
 	})
-	mux.HandleFunc("GET /admin/login", handleAdminLogin)
+	mux.HandleFunc("GET /admin/login", handleAdminLogin(cfg))
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
 	postSvc.RegisterRoutes(mux)

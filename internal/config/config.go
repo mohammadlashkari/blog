@@ -9,6 +9,7 @@ type Config struct {
 	LocalContentRepo  string  `env:"LOCAL_CONTENT_REPO"`
 	RemoteContentRepo string  `env:"REMOTE_CONTENT_REPO"`
 	WebhookSecret     string  `env:"WEBHOOK_SECRET"`
+	ApiToken          string  `env:"API_TOKEN"`
 }
 
 func New() (*Config, error) {
