@@ -12,8 +12,9 @@ import (
 )
 
 const addPostTag = `-- name: AddPostTag :exec
-INSERT OR IGNORE INTO post_tags (post_id, tag_id)
+INSERT INTO post_tags (post_id, tag_id)
 VALUES (?, ?)
+ON CONFLICT(post_id, tag_id) DO NOTHING
 `
 
 type AddPostTagParams struct {
@@ -32,6 +33,26 @@ DELETE FROM post_tags WHERE post_id = ?
 
 func (q *Queries) DeletePostTags(ctx context.Context, postID int64) error {
 	_, err := q.db.ExecContext(ctx, deletePostTags, postID)
+	return err
+}
+
+const deletePosts = `-- name: DeletePosts :exec
+DELETE FROM posts
+WHERE slug IN (/*SLICE:slugs*/?)
+`
+
+func (q *Queries) DeletePosts(ctx context.Context, slugs []string) error {
+	query := deletePosts
+	var queryParams []interface{}
+	if len(slugs) > 0 {
+		for _, v := range slugs {
+			queryParams = append(queryParams, v)
+		}
+		query = strings.Replace(query, "/*SLICE:slugs*/?", strings.Repeat(",?", len(slugs))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:slugs*/?", "NULL", 1)
+	}
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
 	return err
 }
 
@@ -171,6 +192,37 @@ func (q *Queries) ListTags(ctx context.Context) ([]Tag, error) {
 	return items, nil
 }
 
+const listTagsForPost = `-- name: ListTagsForPost :many
+SELECT tags.id, tags.name
+FROM tags
+JOIN post_tags ON post_tags.tag_id = tags.id
+WHERE post_tags.post_id = ?
+ORDER BY tags.name
+`
+
+func (q *Queries) ListTagsForPost(ctx context.Context, postID int64) ([]Tag, error) {
+	rows, err := q.db.QueryContext(ctx, listTagsForPost, postID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Tag
+	for rows.Next() {
+		var i Tag
+		if err := rows.Scan(&i.ID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const postByID = `-- name: PostByID :one
 SELECT id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at FROM posts 
 WHERE id = ?
@@ -237,35 +289,33 @@ func (q *Queries) PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, e
 	return i, err
 }
 
-const tagsByPostID = `-- name: TagsByPostID :many
-SELECT tags.id, tags.name
-FROM tags
-JOIN post_tags ON post_tags.tag_id = tags.id
-WHERE post_tags.post_id = ?
-ORDER BY tags.name
+const removePostTagsByName = `-- name: RemovePostTagsByName :exec
+DELETE FROM post_tags
+WHERE post_id = ?
+  AND tag_id IN (
+    SELECT id FROM tags WHERE name IN (/*SLICE:names*/?)
+  )
 `
 
-func (q *Queries) TagsByPostID(ctx context.Context, postID int64) ([]Tag, error) {
-	rows, err := q.db.QueryContext(ctx, tagsByPostID, postID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Tag
-	for rows.Next() {
-		var i Tag
-		if err := rows.Scan(&i.ID, &i.Name); err != nil {
-			return nil, err
+type RemovePostTagsByNameParams struct {
+	PostID int64    `json:"post_id"`
+	Names  []string `json:"names"`
+}
+
+func (q *Queries) RemovePostTagsByName(ctx context.Context, arg RemovePostTagsByNameParams) error {
+	query := removePostTagsByName
+	var queryParams []interface{}
+	queryParams = append(queryParams, arg.PostID)
+	if len(arg.Names) > 0 {
+		for _, v := range arg.Names {
+			queryParams = append(queryParams, v)
 		}
-		items = append(items, i)
+		query = strings.Replace(query, "/*SLICE:names*/?", strings.Repeat(",?", len(arg.Names))[1:], 1)
+	} else {
+		query = strings.Replace(query, "/*SLICE:names*/?", "NULL", 1)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+	_, err := q.db.ExecContext(ctx, query, queryParams...)
+	return err
 }
 
 const upsertPost = `-- name: UpsertPost :one
@@ -286,7 +336,7 @@ ON CONFLICT(slug) DO UPDATE SET
   content_hash = excluded.content_hash,
   version = posts.version + 1,
   updated_at = CURRENT_TIMESTAMP
-RETURNING id, title, slug, cover_image, language, is_favorite, content_hash, version, created_at, published_at, updated_at
+RETURNING id
 `
 
 type UpsertPostParams struct {
@@ -298,7 +348,7 @@ type UpsertPostParams struct {
 	ContentHash string     `json:"content_hash"`
 }
 
-func (q *Queries) UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error) {
+func (q *Queries) UpsertPost(ctx context.Context, arg UpsertPostParams) (int64, error) {
 	row := q.db.QueryRowContext(ctx, upsertPost,
 		arg.Title,
 		arg.Slug,
@@ -307,33 +357,21 @@ func (q *Queries) UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, e
 		arg.PublishedAt,
 		arg.ContentHash,
 	)
-	var i Post
-	err := row.Scan(
-		&i.ID,
-		&i.Title,
-		&i.Slug,
-		&i.CoverImage,
-		&i.Language,
-		&i.IsFavorite,
-		&i.ContentHash,
-		&i.Version,
-		&i.CreatedAt,
-		&i.PublishedAt,
-		&i.UpdatedAt,
-	)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }
 
 const upsertTag = `-- name: UpsertTag :one
 INSERT INTO tags (name)
 VALUES (?)
 ON CONFLICT(name) DO UPDATE SET name = excluded.name
-RETURNING id, name
+RETURNING id
 `
 
-func (q *Queries) UpsertTag(ctx context.Context, name string) (Tag, error) {
+func (q *Queries) UpsertTag(ctx context.Context, name string) (int64, error) {
 	row := q.db.QueryRowContext(ctx, upsertTag, name)
-	var i Tag
-	err := row.Scan(&i.ID, &i.Name)
-	return i, err
+	var id int64
+	err := row.Scan(&id)
+	return id, err
 }

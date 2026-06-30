@@ -11,14 +11,16 @@ import (
 type Querier interface {
 	AddPostTag(ctx context.Context, arg AddPostTagParams) error
 	DeletePostTags(ctx context.Context, postID int64) error
+	DeletePosts(ctx context.Context, slugs []string) error
 	ListPosts(ctx context.Context, includeAll bool) ([]Post, error)
 	ListPostsByTag(ctx context.Context, arg ListPostsByTagParams) ([]Post, error)
 	ListTags(ctx context.Context) ([]Tag, error)
+	ListTagsForPost(ctx context.Context, postID int64) ([]Tag, error)
 	PostByID(ctx context.Context, arg PostByIDParams) (Post, error)
 	PostBySlug(ctx context.Context, arg PostBySlugParams) (Post, error)
-	TagsByPostID(ctx context.Context, postID int64) ([]Tag, error)
-	UpsertPost(ctx context.Context, arg UpsertPostParams) (Post, error)
-	UpsertTag(ctx context.Context, name string) (Tag, error)
+	RemovePostTagsByName(ctx context.Context, arg RemovePostTagsByNameParams) error
+	UpsertPost(ctx context.Context, arg UpsertPostParams) (int64, error)
+	UpsertTag(ctx context.Context, name string) (int64, error)
 }
 
 var _ Querier = (*Queries)(nil)

@@ -16,6 +16,7 @@ const (
 
 type Service struct {
 	cfg   *config.Config
+	db    *sql.DB
 	store Querier
 	md    goldmark.Markdown
 }
@@ -23,6 +24,7 @@ type Service struct {
 func NewService(cfg *config.Config, db *sql.DB, md goldmark.Markdown) *Service {
 	return &Service{
 		cfg:   cfg,
+		db:    db,
 		store: New(db),
 		md:    md,
 	}

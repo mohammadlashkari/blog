@@ -39,7 +39,7 @@ AND (
     OR CAST(@include_all AS BOOLEAN) = TRUE
 );
 
--- name: TagsByPostID :many
+-- name: ListTagsForPost :many
 SELECT tags.*
 FROM tags
 JOIN post_tags ON post_tags.tag_id = tags.id
@@ -64,17 +64,31 @@ ON CONFLICT(slug) DO UPDATE SET
   content_hash = excluded.content_hash,
   version = posts.version + 1,
   updated_at = CURRENT_TIMESTAMP
-RETURNING *;
+RETURNING id;
+
+-- name: DeletePosts :exec
+DELETE FROM posts
+WHERE slug IN (sqlc.slice(slugs));
+
+-- name: DeletePostTags :exec
+DELETE FROM post_tags WHERE post_id = ?;
+
 
 -- name: UpsertTag :one
 INSERT INTO tags (name)
 VALUES (?)
 ON CONFLICT(name) DO UPDATE SET name = excluded.name
-RETURNING *;
-
--- name: DeletePostTags :exec
-DELETE FROM post_tags WHERE post_id = ?;
+RETURNING id;
 
 -- name: AddPostTag :exec
-INSERT OR IGNORE INTO post_tags (post_id, tag_id)
-VALUES (?, ?);
+INSERT INTO post_tags (post_id, tag_id)
+VALUES (?, ?)
+ON CONFLICT(post_id, tag_id) DO NOTHING;
+
+
+-- name: RemovePostTagsByName :exec
+DELETE FROM post_tags
+WHERE post_id = ?
+  AND tag_id IN (
+    SELECT id FROM tags WHERE name IN (sqlc.slice('names'))
+  );

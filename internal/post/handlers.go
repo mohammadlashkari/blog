@@ -4,27 +4,19 @@ import (
 	"blog/internal/ui"
 	"bytes"
 	"context"
-	"crypto/hmac"
-	"crypto/sha256"
 	"database/sql"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
-	"io/fs"
 	"log/slog"
 	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"strings"
-	"sync"
 	"time"
 
 	"github.com/a-h/templ"
 	"github.com/yuin/goldmark/parser"
-	"gopkg.in/yaml.v3"
 )
 
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
@@ -85,7 +77,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := s.store.TagsByPostID(ctx, post.ID)
+	tags, err := s.store.ListTagsForPost(ctx, post.ID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			slog.ErrorContext(ctx, "failed to get post's tags", "slug", slug, "error", err)
@@ -184,189 +176,11 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		}
 		slog.InfoContext(ctx, "git pull succeeded")
 
-		if err := s.sync(ctx); err != nil {
+		if err := s.syncBlog(ctx); err != nil {
 			slog.ErrorContext(ctx, "sync faield", "error", err)
 			return
 		}
 
 		slog.InfoContext(ctx, "sync succeeded")
 	}()
-}
-
-func (s *Service) sync(ctx context.Context) error {
-	posts, err := s.store.ListPosts(ctx, true)
-	if err != nil {
-		return err
-	}
-
-	dbPosts := make(map[string]Post, len(posts))
-	for _, p := range posts {
-		dbPosts[p.Slug] = p
-	}
-
-	root := filepath.Join(s.cfg.LocalContentRepo, "posts")
-	fsPosts, err := fsPosts(root)
-	if err != nil {
-		return err
-	}
-
-	// Reconciliation
-	for slug, fm := range fsPosts {
-		dbHash, ok := dbPosts[slug]
-
-		// No change
-		if ok && fm.ContentHash == dbHash.ContentHash {
-			slog.InfoContext(ctx, "no change", "slug", fm.Slug)
-		} else {
-			slog.InfoContext(ctx, "changed", "slug", fm.Slug)
-			_, err := s.store.UpsertPost(ctx, UpsertPostParams{
-				Slug:        slug,
-				Title:       fm.Title,
-				CoverImage:  &fm.CoverImage,
-				Language:    fm.Language,
-				ContentHash: fm.ContentHash,
-				PublishedAt: fm.PublishedAt,
-			})
-			if err != nil {
-				return err
-			}
-		}
-
-		delete(dbPosts, slug)
-	}
-
-	return nil
-}
-
-type FrontMatter struct {
-	Title       string     `yaml:"title"`
-	Slug        string     `yaml:"slug"`
-	CoverImage  string     `yaml:"cover_image"`
-	Language    Language   `yaml:"language"`
-	PublishedAt *time.Time `yaml:"published_at"`
-	Tags        []string   `yaml:"tags"`
-	ContentHash string
-}
-
-type result struct {
-	fm  *FrontMatter
-	err error
-}
-
-func fsPosts(root string) (map[string]*FrontMatter, error) {
-	done := make(chan struct{})
-	defer close(done)
-
-	paths, errc := walkRepo(done, root)
-
-	const numWorkers = 20
-	result := make(chan result)
-
-	var wg sync.WaitGroup
-	for range numWorkers {
-		wg.Go(func() {
-			getFm(done, paths, result)
-		})
-	}
-
-	go func() {
-		wg.Wait()
-		close(result)
-	}()
-
-	fms := map[string]*FrontMatter{}
-	for r := range result {
-		if r.err != nil {
-			return nil, r.err // TODO: should return?
-		}
-
-		fms[r.fm.Slug] = r.fm
-	}
-
-	if err := <-errc; err != nil {
-		return nil, err
-	}
-
-	return fms, nil
-}
-
-func walkRepo(done <-chan struct{}, root string) (<-chan string, <-chan error) {
-	var (
-		paths = make(chan string)
-		errc  = make(chan error, 1)
-	)
-
-	go func() {
-		defer close(paths)
-
-		errc <- filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
-			if err != nil {
-				return err
-			}
-
-			if !d.Type().IsRegular() || filepath.Base(path) != "index.md" {
-				return nil
-			}
-
-			select {
-			case paths <- path:
-				return nil
-			case <-done:
-				return errors.New("walked canceled")
-			}
-
-		})
-	}()
-
-	return paths, errc
-}
-
-func getFm(done <-chan struct{}, paths <-chan string, c chan<- result) {
-	for path := range paths {
-		fm, err := decodeFM(path)
-		select {
-		case c <- result{fm, err}:
-		case <-done:
-			return
-		}
-	}
-}
-
-func decodeFM(path string) (*FrontMatter, error) {
-	data, err := os.ReadFile(path) // TODO: should i read chunk by chunk?
-	if err != nil {
-		return nil, err
-	}
-	sum := sha256.Sum256(data)
-	hash := hex.EncodeToString(sum[:])
-
-	parts := bytes.SplitN(data, []byte("---\n"), 3)
-	if len(parts) < 3 {
-		return nil, fmt.Errorf("invalid %q post format", path)
-	}
-
-	fmBytes := parts[1]
-
-	var fm FrontMatter
-	if err := yaml.Unmarshal(fmBytes, &fm); err != nil {
-		return nil, err
-	}
-
-	fm.ContentHash = hash
-
-	return &fm, nil
-}
-
-func verifyGitHubSignature(payload []byte, signature, secret string) bool {
-	if signature == "" || secret == "" {
-		return false
-	}
-
-	signature = strings.TrimPrefix(signature, "sha256=")
-
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write(payload)
-	expectedMAC := hex.EncodeToString(mac.Sum(nil))
-
-	return hmac.Equal([]byte(signature), []byte(expectedMAC))
 }

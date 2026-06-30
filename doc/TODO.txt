@@ -11,6 +11,7 @@ Pagination
 - Farsi number
 RSS
 Add DB index
+- Fix \r\n Problem
 
 blog-content/
   posts/
