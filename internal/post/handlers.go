@@ -30,12 +30,12 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	tagsFilter := r.URL.Query()["tag"]
 
 	if len(tagsFilter) > 0 {
-		posts, err = s.store.ListPostsByTag(ctx, ListPostsByTagParams{
+		posts, err = s.q.ListPostsByTag(ctx, ListPostsByTagParams{
 			TagNames:   tagsFilter,
 			IncludeAll: true,
 		})
 	} else {
-		posts, err = s.store.ListPosts(ctx, true)
+		posts, err = s.q.ListPosts(ctx, true)
 	}
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list posts", "error", err)
@@ -43,7 +43,7 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := s.store.ListTags(ctx)
+	tags, err := s.q.ListTags(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to list tags", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -63,7 +63,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	post, err := s.store.PostBySlug(ctx, PostBySlugParams{
+	post, err := s.q.PostBySlug(ctx, PostBySlugParams{
 		Slug:       slug,
 		IncludeAll: true,
 	})
@@ -77,7 +77,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tags, err := s.store.ListTagsForPost(ctx, post.ID)
+	tags, err := s.q.ListTagsForPost(ctx, post.ID)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
 			slog.ErrorContext(ctx, "failed to get post's tags", "slug", slug, "error", err)
@@ -86,7 +86,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	postPath := filepath.Join(s.cfg.LocalContentRepo, post.Slug, "index.md") // TODO: check
+	postPath := filepath.Join(s.cfg.LocalContentRepo, "posts", post.Slug, "index.md")
 	contentMD, err := os.ReadFile(postPath)
 	if err != nil {
 		slog.ErrorContext(
@@ -177,7 +177,7 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		slog.InfoContext(ctx, "git pull succeeded")
 
 		if err := s.syncBlog(ctx); err != nil {
-			slog.ErrorContext(ctx, "sync faield", "error", err)
+			slog.ErrorContext(ctx, "sync failed", "error", err)
 			return
 		}
 

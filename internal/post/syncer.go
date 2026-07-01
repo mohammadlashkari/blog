@@ -20,7 +20,7 @@ import (
 )
 
 func (s *Service) syncBlog(ctx context.Context) error {
-	posts, err := s.store.ListPosts(ctx, true)
+	posts, err := s.q.ListPosts(ctx, true)
 	if err != nil {
 		return fmt.Errorf("list posts: %w", err)
 	}
@@ -46,7 +46,6 @@ func (s *Service) syncBlog(ctx context.Context) error {
 		}
 
 		slog.InfoContext(ctx, "changed", "slug", fm.Slug)
-
 		if err := s.syncPost(ctx, slug, fm); err != nil {
 			errs = append(errs, err)
 		}
@@ -57,7 +56,7 @@ func (s *Service) syncBlog(ctx context.Context) error {
 		for slug := range dbPosts {
 			deleteSlugs = append(deleteSlugs, slug)
 		}
-		if err := s.store.DeletePosts(ctx, deleteSlugs); err != nil {
+		if err := s.q.DeletePosts(ctx, deleteSlugs); err != nil {
 			slog.ErrorContext(ctx, "failed to delete posts", "slugs", deleteSlugs, "error", err)
 			errs = append(errs, fmt.Errorf("delete posts %v: %w", deleteSlugs, err))
 		}
