@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"errors"
-	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -72,7 +71,7 @@ func (c *Content) walkRepo(done <-chan struct{}, root string) (<-chan string, <-
 				return err
 			}
 
-			if !d.Type().IsRegular() || filepath.Base(path) != "index.md" { // TODO
+			if !d.Type().IsRegular() || filepath.Base(path) != c.contentFilename {
 				return nil
 			}
 
@@ -124,8 +123,6 @@ func (c *Content) decodeFM(path string) (*Post, error) {
 		ContentHash: sha256.Sum256(content),
 		FrontMatter: fm,
 	}
-
-	fmt.Println(fm.PublishedAt, "-----------")
 
 	return post, nil
 }

@@ -8,7 +8,8 @@ Admin only endpoints
 Shutdown handle
 Post Assets
 RSS
-
+Rebuild if changed
+Validation
 
 Pagination/Search
 

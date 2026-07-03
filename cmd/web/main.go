@@ -28,11 +28,12 @@ func main() {
 		cfg.LocalContentPath,
 		cfg.RemoteContentPath,
 		cfg.MainBranchName,
+		cfg.ContentFilename,
 	)
 
 	postSrv, err := post.New(ctx, cfg, cont)
 	if err != nil {
-		panic(err)
+		log.Fatalln("failed to boot post service:", err)
 	}
 
 	mux := http.NewServeMux()

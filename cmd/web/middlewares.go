@@ -135,6 +135,7 @@ func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
+// TODO: check these
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set(

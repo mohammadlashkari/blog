@@ -2,6 +2,7 @@ package content
 
 import (
 	"context"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/yuin/goldmark"
@@ -12,23 +13,23 @@ import (
 )
 
 type Content struct {
-	localPath  string
-	remotePath string
-	postsPath  string
-	branch     string
-	md         goldmark.Markdown
+	localPath       string
+	remotePath      string
+	postsPath       string
+	branch          string
+	contentFilename string
+	md              goldmark.Markdown
 }
 
-func New(localPath, remotePath, branch string) *Content {
-	c := &Content{
-		localPath:  localPath,
-		remotePath: remotePath,
-		branch:     branch,
-		postsPath:  filepath.Join(localPath, "posts"),
-		md:         mdParser(),
+func New(localPath, remotePath, branch, contentFilename string) *Content {
+	return &Content{
+		localPath:       localPath,
+		remotePath:      remotePath,
+		branch:          branch,
+		postsPath:       filepath.Join(localPath, "posts"),
+		contentFilename: contentFilename,
+		md:              mdParser(),
 	}
-
-	return c
 }
 
 func mdParser() goldmark.Markdown {
@@ -56,5 +57,12 @@ func (c *Content) Build(ctx context.Context) (*Index, error) {
 		return nil, err
 	}
 
-	return c.buildIndex()
+	idx, err := c.buildIndex()
+	if err != nil {
+		slog.ErrorContext(ctx, "content build failed")
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "content build succeeded")
+	return idx, nil
 }

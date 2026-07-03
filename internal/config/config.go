@@ -11,7 +11,7 @@ type Config struct {
 	MainBranchName    string  `env:"MAIN_BRANCH_NAME"`
 	WebhookSecret     string  `env:"WEBHOOK_SECRET"`
 	ApiToken          string  `env:"API_TOKEN"`
-	PostFileName      string  `env:"POST_FILENAME"` // TODO
+	ContentFilename   string  `env:"CONTENT_FILENAME"`
 }
 
 func New() (*Config, error) {
@@ -23,5 +23,6 @@ func New() (*Config, error) {
 		LimiterEnable:     false,
 		WebhookSecret:     "secret",
 		MainBranchName:    "master",
+		ContentFilename:   "index.md",
 	}, nil
 }
