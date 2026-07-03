@@ -1,15 +1,21 @@
 package post
 
 import (
+	"blog/internal/content"
+	"blog/internal/ui"
 	"bytes"
-	"cmp"
 	"log/slog"
 	"net/http"
-	"slices"
+	"sort"
+	"strconv"
 
 	"github.com/a-h/templ"
 	"github.com/mshafiee/jalali"
 )
+
+var components = map[string]templ.Component{
+	"game-of-life": ui.GameOfLifeEmbed(),
+}
 
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	ctx := r.Context()
@@ -21,102 +27,85 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 }
 
 type uiPost struct {
-	Post
-	DisplayDate string
+	*content.Post
+	displayDate string
 }
 
 type yearGroup struct {
-	isUnpublished bool
-	year          int
-	posts         []uiPost
+	year  string
+	posts []uiPost
 }
 
-// Posts are already sorted by PublishedAt in descending order
-func groupPostsByLanguageAndYear(posts []Post) (en, fa []yearGroup) {
-	enGroups := make(map[int][]uiPost)
-	faGroups := make(map[int][]uiPost)
+func groupByYearAndLang(posts []*content.Post) (en, fa []yearGroup) {
+	enYears := make(map[int][]uiPost)
+	faYears := make(map[int][]uiPost)
+	var enDrafts, faDrafts []uiPost
 
-	var enUnpublished []uiPost
-	var faUnpublished []uiPost
+	for _, post := range posts {
+		u := buildUIPost(post, "02 Jan", "%d %B")
 
-	for _, p := range posts {
-
-		uiPost := uiPost{Post: p}
-
-		switch p.Language {
-		case LanguageEn:
-
-			if p.PublishedAt == nil {
-				uiPost.DisplayDate = "Draft"
-				enUnpublished = append(enUnpublished, uiPost)
+		switch post.Language {
+		case content.LanguageEn:
+			if post.PublishedAt != nil {
+				enYears[post.PublishedAt.Year()] = append(enYears[post.PublishedAt.Year()], u)
 			} else {
-				uiPost.DisplayDate = p.PublishedAt.Format("02 Jan")
-				year := p.PublishedAt.Year()
-				enGroups[year] = append(enGroups[year], uiPost)
+				enDrafts = append(enDrafts, u)
 			}
-
-		case LanguageFa:
-
-			if p.PublishedAt == nil {
-				uiPost.DisplayDate = "پیش‌نویس"
-				faUnpublished = append(faUnpublished, uiPost)
+		case content.LanguageFa:
+			if post.PublishedAt != nil {
+				jt := jalali.ToJalali(*post.PublishedAt)
+				faYears[jt.Year()] = append(faYears[jt.Year()], u)
 			} else {
-				jt := jalali.ToJalali(*p.PublishedAt)
-				uiPost.DisplayDate = farsiNum(jt.Format("%d %B"))
-				year := jt.Year()
-				faGroups[year] = append(faGroups[year], uiPost)
+				faDrafts = append(faDrafts, u)
 			}
 		}
 	}
 
-	// Build standard groups
-	en = buildYearGroups(enGroups)
-	fa = buildYearGroups(faGroups)
+	en = buildYearGroups(enYears, enDrafts, "Unpublished")
+	fa = buildYearGroups(faYears, faDrafts, "منتشر نشده")
 
-	if len(enUnpublished) > 0 {
-		en = append([]yearGroup{{isUnpublished: true, posts: enUnpublished}}, en...)
-	}
-	if len(faUnpublished) > 0 {
-		fa = append([]yearGroup{{isUnpublished: true, posts: faUnpublished}}, fa...)
-	}
-
-	return en, fa
+	return
 }
 
-func buildYearGroups(groups map[int][]uiPost) []yearGroup {
-	yg := make([]yearGroup, 0, len(groups))
-	for y, ps := range groups {
-		yg = append(yg, yearGroup{year: y, posts: ps})
+// buildYearGroups sorts numeric years descending and prepends the draft
+// bucket (if non-empty) so drafts always come first.
+func buildYearGroups(m map[int][]uiPost, drafts []uiPost, draftLabel string) []yearGroup {
+	groups := make([]yearGroup, 0, len(m)+1)
+	if len(drafts) > 0 {
+		groups = append(groups, yearGroup{year: draftLabel, posts: drafts})
 	}
 
-	slices.SortFunc(yg, func(a, b yearGroup) int {
-		return cmp.Compare(b.year, a.year)
-	})
+	years := make([]int, 0, len(m))
+	for y := range m {
+		years = append(years, y)
+	}
+	sort.Sort(sort.Reverse(sort.IntSlice(years)))
 
-	return yg
+	for _, y := range years {
+		groups = append(groups, yearGroup{year: strconv.Itoa(y), posts: m[y]})
+	}
+	return groups
 }
 
-func buildUIPost(p Post) uiPost {
-	uiPost := uiPost{Post: p}
-
+func buildUIPost(p *content.Post, enLayout, faLayout string) uiPost {
+	u := uiPost{Post: p}
 	switch p.Language {
-	case LanguageEn:
+	case content.LanguageEn:
 		if p.PublishedAt == nil {
-			uiPost.DisplayDate = "Draft"
+			u.displayDate = "Draft"
 		} else {
-			uiPost.DisplayDate = p.PublishedAt.Format("02 January 2006")
+			u.displayDate = p.PublishedAt.Format(enLayout)
 		}
-
-	case LanguageFa:
+	case content.LanguageFa:
 		if p.PublishedAt == nil {
-			uiPost.DisplayDate = "پیش‌نویس"
+			u.displayDate = "پیش‌نویس"
 		} else {
 			jt := jalali.ToJalali(*p.PublishedAt)
-			uiPost.DisplayDate = farsiNum(jt.Format("%d %B %Y"))
+			u.displayDate = farsiNum(jt.Format(faLayout))
 		}
 	}
 
-	return uiPost
+	return u
 }
 
 func farsiNum(s string) string {
@@ -132,13 +121,13 @@ func farsiNum(s string) string {
 	return buf.String()
 }
 
-func dirOf(l Language) string {
-	if l == LanguageFa {
+func dirOf(l content.Language) string {
+	if l == content.LanguageFa {
 		return "rtl"
 	}
 	return "ltr"
 }
 
-func langOf(l Language) string {
+func langOf(l content.Language) string {
 	return string(l)
 }

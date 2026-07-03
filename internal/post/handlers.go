@@ -1,121 +1,56 @@
 package post
 
 import (
-	"blog/internal/ui"
-	"bytes"
 	"context"
-	"database/sql"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"io"
 	"log/slog"
 	"net/http"
-	"os"
-	"os/exec"
-	"path/filepath"
+	"strings"
 	"time"
-
-	"github.com/a-h/templ"
-	"github.com/yuin/goldmark/parser"
 )
 
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	var (
-		posts []Post
-		err   error
+		tags []string
+		en   []yearGroup
+		fa   []yearGroup
 	)
 
-	tagsFilter := r.URL.Query()["tag"]
+	tags = r.URL.Query()["tag"]
 
-	if len(tagsFilter) > 0 {
-		posts, err = s.q.ListPostsByTag(ctx, ListPostsByTagParams{
-			TagNames:   tagsFilter,
-			IncludeAll: true,
-		})
+	if len(tags) > 0 {
+		posts := s.GetPostsWithTags(tags)
+		en, fa = groupByYearAndLang(posts)
+
 	} else {
-		posts, err = s.q.ListPosts(ctx, true)
-	}
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to list posts", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
+		posts := s.GetPosts()
+		en, fa = groupByYearAndLang(posts)
+		tags = s.GetTags()
 	}
 
-	tags, err := s.q.ListTags(ctx)
-	if err != nil {
-		slog.ErrorContext(ctx, "failed to list tags", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	en, fa := groupPostsByLanguageAndYear(posts)
 	render(w, r, PostsIndexPage(en, fa, tags))
 }
 
 func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
 	slug := r.PathValue("slug")
 	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	post, err := s.q.PostBySlug(ctx, PostBySlugParams{
-		Slug:       slug,
-		IncludeAll: true,
-	})
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			http.NotFound(w, r)
-			return
-		}
-		slog.ErrorContext(ctx, "failed to get post", "slug", slug, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	post, ok := s.GetPostBySlug(slug)
+	if !ok {
+		http.NotFound(w, r)
 		return
 	}
+	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
-	tags, err := s.q.ListTagsForPost(ctx, post.ID)
-	if err != nil {
-		if !errors.Is(err, sql.ErrNoRows) {
-			slog.ErrorContext(ctx, "failed to get post's tags", "slug", slug, "error", err)
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			return
-		}
-	}
-
-	postPath := filepath.Join(s.cfg.LocalContentRepo, "posts", post.Slug, "index.md")
-	contentMD, err := os.ReadFile(postPath)
-	if err != nil {
-		slog.ErrorContext(
-			ctx, "failed to read post's markdown file",
-			"slug", slug,
-			"path", postPath,
-			"error", err,
-		)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	parserCtx := parser.NewContext()
-
-	var buf bytes.Buffer
-	if err := s.md.Convert(contentMD, &buf, parser.WithContext(parserCtx)); err != nil {
-		slog.ErrorContext(ctx, "failed to convert markdown to html", "slug", slug, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-	contentHTML := buf.String()
-
-	var component templ.Component
-	if post.Slug == "why-linux-fa" {
-		component = ui.GameOfLifeEmbed()
-	}
-
-	uiPost := buildUIPost(post)
-	render(w, r, PostPage(uiPost, tags, contentHTML, component))
+	render(w, r, PostPage(uiPost, post.Tags, post.HTML, components[post.Embed]))
 }
 
 type GitHubPushPayload struct {
@@ -153,7 +88,7 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if payload.Ref != "refs/heads/master" {
+	if payload.Ref != fmt.Sprintf("refs/heads/%s", s.cfg.MainBranchName) {
 		w.WriteHeader(http.StatusOK)
 		return
 	}
@@ -162,25 +97,25 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		cmd := exec.CommandContext(ctx, "git", "pull", "origin", "master")
-		cmd.Dir = s.cfg.LocalContentRepo
-
-		output, err := cmd.CombinedOutput()
+		idx, err := s.content.Build(ctx)
 		if err != nil {
-			slog.ErrorContext(
-				ctx,
-				"git pull failed",
-				"path", cmd.Dir, "error", err, "output", string(output),
-			)
+			slog.ErrorContext(ctx, "failed to rebuild the blog content", "error", err)
 			return
 		}
-		slog.InfoContext(ctx, "git pull succeeded")
-
-		if err := s.syncBlog(ctx); err != nil {
-			slog.ErrorContext(ctx, "sync failed", "error", err)
-			return
-		}
-
-		slog.InfoContext(ctx, "sync succeeded")
+		s.index.Store(idx)
 	}()
+}
+
+func verifyGitHubSignature(payload []byte, signature, secret string) bool {
+	if signature == "" || secret == "" {
+		return false
+	}
+
+	signature = strings.TrimPrefix(signature, "sha256=")
+
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(payload)
+	expectedMAC := hex.EncodeToString(mac.Sum(nil))
+
+	return hmac.Equal([]byte(signature), []byte(expectedMAC))
 }

@@ -3,13 +3,12 @@ package post
 import (
 	"blog/internal/ui"
 	"net/url"
-	"strconv"
 )
 
 templ PostsIndexPage(
 	english []yearGroup,
-	persian []yearGroup,
-	tags []Tag,
+	farsi []yearGroup,
+	tags []string,
 ) {
 	@ui.Layout("Blog") {
 		<header class="container index-wide">
@@ -21,8 +20,8 @@ templ PostsIndexPage(
 				<ul>
 					for _, tag := range tags {
 						<li>
-							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag.Name)) } class="tag">
-								{ tag.Name }
+							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
+								{ tag }
 							</a>
 						</li>
 					}
@@ -32,52 +31,39 @@ templ PostsIndexPage(
 		<section class="container index-wide">
 			<div class="posts-grid">
 				<!-- English -->
-				<section>
+				<section dir="ltr">
 					for _, group := range english {
 						<h3>
-							if group.isUnpublished {
-								Unpublished
-							} else {
-								{ strconv.Itoa(group.year) }
-							}
+							{ group.year }
 						</h3>
-						<ul>
-							for _, post := range group.posts {
-								<li>
-									<a href={ templ.URL("/post/" + post.Slug) }>
-										{ post.Title }
-									</a>
-									<small class="post-date">
-										{ post.DisplayDate }
-									</small>
-								</li>
-							}
-						</ul>
+						@PostList(group.posts)
 					}
 				</section>
 				<!-- Farsi -->
 				<section dir="rtl">
-					for _, group := range persian {
-						if group.isUnpublished {
-							منتشر نشده
-						} else {
-							{ strconv.Itoa(group.year) }
-						}
-						<ul>
-							for _, post := range group.posts {
-								<li>
-									<a href={ templ.URL("/post/" + post.Slug) }>
-										{ post.Title }
-									</a>
-									<small class="post-date">
-										{ post.DisplayDate }
-									</small>
-								</li>
-							}
-						</ul>
+					for _, group := range farsi {
+						<h3>
+							{ group.year }
+						</h3>
+						@PostList(group.posts)
 					}
 				</section>
 			</div>
 		</section>
 	}
+}
+
+templ PostList(posts []uiPost) {
+	<ul>
+		for _, post := range posts {
+			<li>
+				<a href={ templ.URL("/post/" + post.Slug) }>
+					{ post.Title }
+				</a>
+				<small class="post-date">
+					{ post.displayDate }
+				</small>
+			</li>
+		}
+	</ul>
 }

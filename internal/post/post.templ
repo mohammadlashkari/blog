@@ -5,19 +5,19 @@ import (
 	"net/url"
 )
 
-templ PostPage(post uiPost, tags []Tag, htmlContent string, component templ.Component) {
+templ PostPage(post uiPost, tags []string, htmlContent string, component templ.Component) {
 	@ui.Layout(post.Title) {
 		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
 			<header class="post-header">
 				<div class="post-date">
-					{ post.DisplayDate }
+					{ post.displayDate }
 				</div>
 				<h1 class="post-title">{ post.Title }</h1>
 				if len(tags) > 0 {
 					<div class="post-tags">
 						for _, tag := range tags {
-							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag.Name)) } class="tag">
-								{ tag.Name }
+							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
+								{ tag }
 							</a>
 						}
 					</div>

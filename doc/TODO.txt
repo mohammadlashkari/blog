@@ -1,21 +1,14 @@
-Add admin only endpoints
 - Add resume download
 - Add Vazir font
-Add cache layer
-Shutdown handle
 - Farsi dates
-Search
 - Tag filter
-Pagination
-- Add photo
 - Farsi number
-RSS
-Add DB index
-- Fix \r\n Problem
 
-blog-content/
-  posts/
-    <slug>/
-      index.md
-      img_1.png
-      img_2.png
+Admin only endpoints
+Shutdown handle
+Post Assets
+RSS
+
+
+Pagination/Search
+
