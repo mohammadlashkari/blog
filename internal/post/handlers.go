@@ -15,35 +15,32 @@ import (
 )
 
 func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
-	var (
-		tags []string
-		en   []yearGroup
-		fa   []yearGroup
+	ctx := r.Context()
+	tags := r.URL.Query()["tag"]
+
+	posts := s.GetPosts(
+		WithIncludeUnpublished(isAdmin(ctx)),
+		WithTags(tags...),
 	)
 
-	tags = r.URL.Query()["tag"]
-
-	if len(tags) > 0 {
-		posts := s.GetPostsWithTags(tags)
-		en, fa = groupByYearAndLang(posts)
-
-	} else {
-		posts := s.GetPosts()
-		en, fa = groupByYearAndLang(posts)
-		tags = s.GetTags()
-	}
+	en, fa := groupByYearAndLang(posts)
 
 	render(w, r, PostsIndexPage(en, fa, tags))
 }
 
 func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	slug := r.PathValue("slug")
 	if slug == "" {
 		http.NotFound(w, r)
 		return
 	}
 
-	post, ok := s.GetPostBySlug(slug)
+	post, ok := s.GetPostBySlug(
+		slug,
+		WithIncludeUnpublished(isAdmin(ctx)),
+	)
 	if !ok {
 		http.NotFound(w, r)
 		return

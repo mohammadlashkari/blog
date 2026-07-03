@@ -2,30 +2,48 @@ package main
 
 import (
 	"crypto/subtle"
-	"encoding/json"
 	"net/http"
 
 	"blog/internal/config"
 	"blog/internal/ui"
 )
 
-const authCookie = "auth"
+const (
+	adminCookie       = "admin_cookie"
+	passwordFormField = "password"
+)
 
-type IsAdminRequest struct {
-	Password string `json:"password"`
-}
-
-func handleAdminLogin(cfg *config.Config) http.HandlerFunc {
+func HandleAdminLogin(cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		var payload IsAdminRequest
-		if err := json.NewDecoder(r.Body).Decode(&payload); err != nil {
-
-		}
-
-		if subtle.ConstantTimeCompare([]byte(payload.Password), []byte("password")) == 1 {
+		if err := r.ParseForm(); err != nil {
+			http.Error(w, "Bad Request: Unable to parse form", http.StatusBadRequest)
 			return
 		}
 
+		inputPassword := r.FormValue(passwordFormField)
+		if inputPassword == "" {
+			http.Error(w, "Unauthorized: Missing password", http.StatusUnauthorized)
+			return
+		}
+
+		if subtle.ConstantTimeCompare([]byte(inputPassword), []byte(cfg.AdminToken)) != 1 {
+			http.Error(w, "Unauthorized: Invalid password", http.StatusUnauthorized)
+			return
+		}
+
+		cookie := http.Cookie{
+			Name:     adminCookie,
+			Value:    cfg.AdminToken,
+			Path:     "/",
+			MaxAge:   3600, // 1 hour
+			HttpOnly: true,
+			Secure:   true,
+			SameSite: http.SameSiteLaxMode,
+		}
+		http.SetCookie(w, &cookie)
+
+		w.WriteHeader(http.StatusOK)
+		w.Write([]byte("Login successful"))
 	}
 }
 

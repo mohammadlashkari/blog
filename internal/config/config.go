@@ -10,7 +10,8 @@ type Config struct {
 	RemoteContentPath string  `env:"REMOTE_CONTENT_PATH"`
 	MainBranchName    string  `env:"MAIN_BRANCH_NAME"`
 	WebhookSecret     string  `env:"WEBHOOK_SECRET"`
-	ApiToken          string  `env:"API_TOKEN"`
+	AdminToken        string  `env:"ADMIN_TOKEN"`
+	AdminUser         string  `env:"ADMIN_USER"`
 	ContentFilename   string  `env:"CONTENT_FILENAME"`
 }
 
@@ -24,5 +25,7 @@ func New() (*Config, error) {
 		WebhookSecret:     "secret",
 		MainBranchName:    "master",
 		ContentFilename:   "index.md",
+		AdminToken:        "secret",
+		AdminUser:         "admin",
 	}, nil
 }

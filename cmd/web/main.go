@@ -49,6 +49,7 @@ func main() {
 		mux,
 		recoverPanic,
 		logger,
+		isAdmin(cfg),
 		rateLimit(cfg),
 	)
 

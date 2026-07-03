@@ -4,6 +4,7 @@ import (
 	"blog/internal/content"
 	"blog/internal/ui"
 	"bytes"
+	"context"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -24,6 +25,15 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 		slog.ErrorContext(ctx, "failed to render page", "path", r.URL.Path, "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
+}
+
+type contextKey string
+
+const IsAdminKey contextKey = "IsAdmin"
+
+func isAdmin(ctx context.Context) bool {
+	isAdmin, ok := ctx.Value(IsAdminKey).(bool)
+	return ok && isAdmin
 }
 
 type uiPost struct {
