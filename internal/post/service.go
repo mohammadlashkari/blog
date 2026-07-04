@@ -4,9 +4,7 @@ import (
 	"blog/internal/config"
 	"blog/internal/content"
 	"context"
-	"sort"
 	"sync/atomic"
-	"time"
 )
 
 type Service struct {
@@ -29,44 +27,35 @@ func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*Servi
 	return s, nil
 }
 
-type SortOrder int
-
-const (
-	SortNone SortOrder = iota
-	SortNewestFirst
-	SortOldestFirst
-)
-
 type queryOptions struct {
 	includeUnpublished bool
 	language           *content.Language
 	tags               []string
 	limit              int
 	offset             int
-	sortOrder          SortOrder
 }
 
 type QueryOption func(*queryOptions)
 
-func WithIncludeUnpublished(show bool) QueryOption {
+func withIncludeUnpublished(show bool) QueryOption {
 	return func(q *queryOptions) {
 		q.includeUnpublished = show
 	}
 }
 
-func WithLanguage(lang content.Language) QueryOption {
+func withLanguage(lang content.Language) QueryOption {
 	return func(q *queryOptions) {
 		q.language = &lang
 	}
 }
 
-func WithTags(tags ...string) QueryOption {
+func withTags(tags ...string) QueryOption {
 	return func(q *queryOptions) {
 		q.tags = append(q.tags, tags...)
 	}
 }
 
-func WithLimit(limit int) QueryOption {
+func withLimit(limit int) QueryOption {
 	return func(q *queryOptions) {
 		if limit > 0 {
 			q.limit = limit
@@ -74,16 +63,12 @@ func WithLimit(limit int) QueryOption {
 	}
 }
 
-func WithOffset(offset int) QueryOption {
+func withOffset(offset int) QueryOption {
 	return func(q *queryOptions) {
 		if offset > 0 {
 			q.offset = offset
 		}
 	}
-}
-
-func WithSortOrder(order SortOrder) QueryOption {
-	return func(q *queryOptions) { q.sortOrder = order }
 }
 
 func buildQueryOptions(opts ...QueryOption) queryOptions {
@@ -100,44 +85,38 @@ func (s *Service) GetPostBySlug(slug string, opts ...QueryOption) (*content.Post
 	opt := buildQueryOptions(opts...)
 	idx := s.index.Load()
 
-	p, ok := idx.PostsBySlug[slug]
-	if !ok {
+	post, ok := idx.BySlug(slug)
+	if !ok || !canView(post, opt) {
+		return nil, false
+	}
+	if opt.language != nil && post.Language != *opt.language {
 		return nil, false
 	}
 
-	if !canView(p, opt) {
-		return nil, false
-	}
-
-	return p, true
+	return post, true
 }
 
 func (s *Service) GetPosts(opts ...QueryOption) []*content.Post {
 	opt := buildQueryOptions(opts...)
 	idx := s.index.Load()
 
-	matched := make([]*content.Post, 0, len(idx.PostsBySlug))
-	for _, post := range idx.PostsBySlug {
+	// Narrow the base set through a prebuilt index when possible; both All and
+	// ByLanguage come back presorted newest-first.
+	base := idx.All()
+	if opt.language != nil {
+		base = idx.ByLanguage(*opt.language)
+	}
 
+	// Copy matches into a fresh slice: base shares backing storage with the
+	// immutable snapshot and must not be mutated (offset/limit re-slice below).
+	matched := make([]*content.Post, 0, len(base))
+	for _, post := range base {
 		if !canView(post, opt) || !matchTags(post, opt) {
 			continue
 		}
 		matched = append(matched, post)
 	}
 
-	// SortNone together with offset/limit => paginating over Go's randomized map iteration order
-	if opt.sortOrder != SortNone {
-		sort.Slice(matched, func(i, j int) bool {
-			ti, tj := zeroIfNil(matched[i].PublishedAt), zeroIfNil(matched[j].PublishedAt)
-			if !ti.Equal(tj) {
-				if opt.sortOrder == SortOldestFirst {
-					return ti.Before(tj)
-				}
-				return ti.After(tj)
-			}
-			return matched[i].Slug < matched[j].Slug
-		})
-	}
 	if opt.offset >= len(matched) {
 		return []*content.Post{}
 	}
@@ -151,20 +130,11 @@ func (s *Service) GetPosts(opts ...QueryOption) []*content.Post {
 }
 
 func (s *Service) GetTags() []string {
-	idx := s.index.Load()
-	return idx.Tags
+	return s.index.Load().Tags()
 }
 
 func canView(p *content.Post, opt queryOptions) bool {
-	if p.PublishedAt == nil && !opt.includeUnpublished {
-		return false
-	}
-
-	if opt.language != nil && p.Language != *opt.language {
-		return false
-	}
-
-	return true
+	return p.PublishedAt != nil || opt.includeUnpublished
 }
 
 func matchTags(p *content.Post, opt queryOptions) bool {
@@ -181,11 +151,4 @@ func matchTags(p *content.Post, opt queryOptions) bool {
 	}
 
 	return false
-}
-
-func zeroIfNil(t *time.Time) time.Time {
-	if t == nil {
-		return time.Time{}
-	}
-	return *t
 }

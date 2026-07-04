@@ -52,17 +52,40 @@ func mdParser() goldmark.Markdown {
 	return md
 }
 
+// Build syncs the repo and always returns a freshly built index.
 func (c *Content) Build(ctx context.Context) (*Index, error) {
-	if err := c.reconcile(ctx); err != nil {
+	if _, err := c.reconcile(ctx); err != nil {
 		return nil, err
 	}
 
 	idx, err := c.buildIndex()
 	if err != nil {
-		slog.ErrorContext(ctx, "content build failed")
+		slog.ErrorContext(ctx, "content build failed", "error", err)
 		return nil, err
 	}
 
 	slog.InfoContext(ctx, "content build succeeded")
+	return idx, nil
+}
+
+// Refresh syncs the repo and rebuilds the index only when the content changed.
+// It returns a nil index and nil error when nothing changed.
+func (c *Content) Refresh(ctx context.Context) (*Index, error) {
+	changed, err := c.reconcile(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if !changed {
+		slog.InfoContext(ctx, "content unchanged, skipping refresh")
+		return nil, nil
+	}
+
+	idx, err := c.buildIndex()
+	if err != nil {
+		slog.ErrorContext(ctx, "content refresh failed", "error", err)
+		return nil, err
+	}
+
+	slog.InfoContext(ctx, "content refresh succeeded")
 	return idx, nil
 }

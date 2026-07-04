@@ -11,32 +11,30 @@ import (
 	"strings"
 )
 
-func (c *Content) reconcile(ctx context.Context) error {
+// reconcile makes the local repo match the remote and reports whether the
+// content changed as a result (a fresh clone always counts as changed).
+func (c *Content) reconcile(ctx context.Context) (bool, error) {
 	info, err := os.Stat(c.localPath)
 	if err != nil {
 		if !errors.Is(err, fs.ErrNotExist) {
 			slog.ErrorContext(ctx, "failed to read content repo dir", "error", err)
-			return err
+			return false, err
 		}
 
 		if err := c.clone(ctx); err != nil {
-			return err
+			return false, err
 		}
 
-		return nil
+		return true, nil
 	}
 
 	// Guard against the path being a file instead of a directory
 	if !info.IsDir() {
 		slog.ErrorContext(ctx, "content path exists but is not a directory", "path", c.localPath)
-		return fmt.Errorf("local path %s is a file, expected directory", c.localPath)
+		return false, fmt.Errorf("local path %s is a file, expected directory", c.localPath)
 	}
 
-	if err := c.sync(ctx); err != nil {
-		return err
-	}
-
-	return nil
+	return c.sync(ctx)
 }
 
 func (c *Content) clone(ctx context.Context) error {
@@ -52,7 +50,9 @@ func (c *Content) clone(ctx context.Context) error {
 	return nil
 }
 
-func (c *Content) sync(ctx context.Context) error {
+// sync force-resets the local repo to origin/<branch> and reports whether HEAD
+// actually moved. A missing pre-reset hash is treated as changed.
+func (c *Content) sync(ctx context.Context) (bool, error) {
 	preResetHash, err := c.commitHash(ctx, "HEAD")
 	if err != nil {
 		slog.WarnContext(ctx, "could not resolve local HEAD hash before pull", "error", err)
@@ -63,7 +63,7 @@ func (c *Content) sync(ctx context.Context) error {
 	fetchCmd.Dir = c.localPath
 	if output, err := fetchCmd.CombinedOutput(); err != nil {
 		slog.ErrorContext(ctx, "git fetch failed", "error", err, "output", string(output))
-		return fmt.Errorf("content fetch failed: %w", err)
+		return false, fmt.Errorf("content fetch failed: %w", err)
 	}
 
 	// Forcefully reset local branch to match origin/<branch> exactly
@@ -73,27 +73,27 @@ func (c *Content) sync(ctx context.Context) error {
 	output, err := resetCmd.CombinedOutput()
 	if err != nil {
 		slog.ErrorContext(ctx, "git reset --hard failed", "error", err, "output", string(output))
-		return fmt.Errorf("content reset failed: %w", err)
+		return false, fmt.Errorf("content reset failed: %w", err)
 	}
 
 	postResetHash, err := c.commitHash(ctx, "HEAD")
 	if err != nil {
 		slog.ErrorContext(ctx, "could not resolve local HEAD hash after pull", "error", err)
-		return fmt.Errorf("failed to verify post-reset hash: %w", err)
+		return false, fmt.Errorf("failed to verify post-reset hash: %w", err)
 	}
 
 	// Compare hashes to check if anything actually updated
 	if preResetHash != "" && preResetHash == postResetHash {
 		slog.InfoContext(ctx, "git pull completed: already up to date")
-	} else {
-		slog.InfoContext(
-			ctx,
-			"git repository forcefully updated to match remote source of truth",
-			"from", preResetHash, "to", postResetHash,
-		)
+		return false, nil
 	}
 
-	return nil
+	slog.InfoContext(
+		ctx,
+		"git repository forcefully updated to match remote source of truth",
+		"from", preResetHash, "to", postResetHash,
+	)
+	return true, nil
 }
 
 func (c *Content) commitHash(ctx context.Context, ref string) (string, error) {

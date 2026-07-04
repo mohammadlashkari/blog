@@ -19,8 +19,8 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	tags := r.URL.Query()["tag"]
 
 	posts := s.GetPosts(
-		WithIncludeUnpublished(isAdmin(ctx)),
-		WithTags(tags...),
+		withIncludeUnpublished(isAdmin(ctx)),
+		withTags(tags...),
 	)
 
 	en, fa := groupByYearAndLang(posts)
@@ -39,7 +39,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	post, ok := s.GetPostBySlug(
 		slug,
-		WithIncludeUnpublished(isAdmin(ctx)),
+		withIncludeUnpublished(isAdmin(ctx)),
 	)
 	if !ok {
 		http.NotFound(w, r)
@@ -94,9 +94,8 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
-		idx, err := s.content.Build(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "failed to rebuild the blog content", "error", err)
+		idx, err := s.content.Refresh(ctx)
+		if err != nil || idx == nil { // Content unchanged, keep serving the current index
 			return
 		}
 		s.index.Store(idx)
