@@ -21,7 +21,7 @@ type FrontMatter struct {
 	Tags        []string   `yaml:"tags"`
 	PublishedAt *time.Time `yaml:"published_at"`
 	Version     int64      `yaml:"version"`
-	Embed       string     `yaml:"embed"`
+	EmbedID     string     `yaml:"embed"`
 }
 
 type Post struct {

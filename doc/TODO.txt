@@ -3,13 +3,14 @@
 - Farsi dates
 - Tag filter
 - Farsi number
+- Validation
+- Pagination
+- Admin only endpoints
 
-Admin only endpoints
 Shutdown handle
 Post Assets
 RSS
 Rebuild if changed
-Validation
 
-Pagination/Search
 
+Search

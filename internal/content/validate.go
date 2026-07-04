@@ -1,6 +1,7 @@
 package content
 
 import (
+	"blog/internal/ui"
 	"errors"
 	"fmt"
 	"regexp"
@@ -26,6 +27,11 @@ func ValidatePost(p *Post) error {
 	case LanguageEn, LanguageFa:
 	default:
 		errs = append(errs, fmt.Errorf("language %q must be one of %q, %q", p.Language, LanguageEn, LanguageFa))
+	}
+	if embed := strings.TrimSpace(p.EmbedID); embed != "" {
+		if _, ok := ui.PostEmbeds[embed]; !ok {
+			errs = append(errs, fmt.Errorf("invalid %q embed", embed))
+		}
 	}
 
 	return errors.Join(errs...)

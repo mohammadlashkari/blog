@@ -2,9 +2,7 @@ package post
 
 import (
 	"blog/internal/content"
-	"blog/internal/ui"
 	"bytes"
-	"context"
 	"log/slog"
 	"net/http"
 	"sort"
@@ -14,10 +12,6 @@ import (
 	"github.com/mshafiee/jalali"
 )
 
-var components = map[string]templ.Component{
-	"game-of-life": ui.GameOfLifeEmbed(),
-}
-
 func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 	ctx := r.Context()
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -25,15 +19,6 @@ func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
 		slog.ErrorContext(ctx, "failed to render page", "path", r.URL.Path, "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 	}
-}
-
-type contextKey string
-
-const IsAdminKey contextKey = "IsAdmin"
-
-func isAdmin(ctx context.Context) bool {
-	isAdmin, ok := ctx.Value(IsAdminKey).(bool)
-	return ok && isAdmin
 }
 
 type uiPost struct {
@@ -47,34 +32,45 @@ type yearGroup struct {
 }
 
 func groupByYearAndLang(posts []*content.Post) (en, fa []yearGroup) {
-	enYears := make(map[int][]uiPost)
-	faYears := make(map[int][]uiPost)
-	var enDrafts, faDrafts []uiPost
+	var enPosts, faPosts []*content.Post
 
-	for _, post := range posts {
-		u := buildUIPost(post, "02 Jan", "%d %B")
-
-		switch post.Language {
-		case content.LanguageEn:
-			if post.PublishedAt != nil {
-				enYears[post.PublishedAt.Year()] = append(enYears[post.PublishedAt.Year()], u)
-			} else {
-				enDrafts = append(enDrafts, u)
-			}
-		case content.LanguageFa:
-			if post.PublishedAt != nil {
-				jt := jalali.ToJalali(*post.PublishedAt)
-				faYears[jt.Year()] = append(faYears[jt.Year()], u)
-			} else {
-				faDrafts = append(faDrafts, u)
-			}
+	for _, p := range posts {
+		if p.Language == content.LanguageEn {
+			enPosts = append(enPosts, p)
+		} else if p.Language == content.LanguageFa {
+			faPosts = append(faPosts, p)
 		}
 	}
 
-	en = buildYearGroups(enYears, enDrafts, "Unpublished")
-	fa = buildYearGroups(faYears, faDrafts, "منتشر نشده")
+	en = groupPosts(enPosts, "Unpublished", false)
+	fa = groupPosts(faPosts, "منتشر نشده", true)
 
 	return
+}
+
+func groupPosts(posts []*content.Post, draftLabel string, isFarsi bool) []yearGroup {
+	years := make(map[int][]uiPost)
+	var drafts []uiPost
+
+	for _, p := range posts {
+		u := buildUIPost(p, "02 Jan", "%d %B")
+
+		if p.PublishedAt == nil {
+			drafts = append(drafts, u)
+			continue
+		}
+
+		var year int
+		if isFarsi {
+			year = jalali.ToJalali(*p.PublishedAt).Year()
+		} else {
+			year = p.PublishedAt.Year()
+		}
+
+		years[year] = append(years[year], u)
+	}
+
+	return buildYearGroups(years, drafts, draftLabel)
 }
 
 // buildYearGroups sorts numeric years descending and prepends the draft
@@ -89,16 +85,23 @@ func buildYearGroups(m map[int][]uiPost, drafts []uiPost, draftLabel string) []y
 	for y := range m {
 		years = append(years, y)
 	}
-	sort.Sort(sort.Reverse(sort.IntSlice(years)))
+	sort.Slice(years, func(i, j int) bool {
+		return years[i] > years[j]
+	})
 
 	for _, y := range years {
-		groups = append(groups, yearGroup{year: strconv.Itoa(y), posts: m[y]})
+		groups = append(
+			groups,
+			yearGroup{year: strconv.Itoa(y), posts: m[y]},
+		)
 	}
+
 	return groups
 }
 
 func buildUIPost(p *content.Post, enLayout, faLayout string) uiPost {
 	u := uiPost{Post: p}
+
 	switch p.Language {
 	case content.LanguageEn:
 		if p.PublishedAt == nil {

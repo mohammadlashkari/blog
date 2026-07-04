@@ -8,19 +8,19 @@ import (
 	"time"
 )
 
-type Service struct {
+type PostService struct {
 	cfg        *config.Config
 	content    *content.Content
 	index      atomic.Pointer[content.Index]
 	refreshing atomic.Bool
 }
 
-func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*Service, error) {
+func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*PostService, error) {
 	idx, err := cont.Build(ctx)
 	if err != nil {
 		return nil, err
 	}
-	s := &Service{
+	s := &PostService{
 		cfg:     cfg,
 		content: cont,
 	}
@@ -83,7 +83,7 @@ func buildQueryOptions(opts ...QueryOption) queryOptions {
 	return q
 }
 
-func (s *Service) GetPostBySlug(slug string, opts ...QueryOption) (*content.Post, bool) {
+func (s *PostService) GetPostBySlug(slug string, opts ...QueryOption) (*content.Post, bool) {
 	opt := buildQueryOptions(opts...)
 	idx := s.index.Load()
 
@@ -98,41 +98,41 @@ func (s *Service) GetPostBySlug(slug string, opts ...QueryOption) (*content.Post
 	return post, true
 }
 
-func (s *Service) GetPosts(opts ...QueryOption) []*content.Post {
+func (s *PostService) GetPosts(opts ...QueryOption) []*content.Post {
 	opt := buildQueryOptions(opts...)
 	idx := s.index.Load()
 
-	// Narrow the base set through a prebuilt index when possible; both All and
+	// Narrow the posts set through a prebuilt index when possible; both All and
 	// ByLanguage come back presorted newest-first.
-	base := idx.All()
+	posts := idx.All()
 	if opt.language != nil {
-		base = idx.ByLanguage(*opt.language)
+		posts = idx.ByLanguage(*opt.language)
 	}
 
-	// Copy matches into a fresh slice: base shares backing storage with the
-	// immutable snapshot and must not be mutated (offset/limit re-slice below).
+	// Allocate a new slice with the maximum possible capacity
+	// to avoid mutating the global index
+	filtered := make([]*content.Post, 0, len(posts))
 	now := time.Now().UTC()
-	matched := make([]*content.Post, 0, len(base))
-	for _, post := range base {
-		if !canView(post, now, opt) || !matchTags(post, opt) {
-			continue
+
+	for _, post := range posts {
+		if canView(post, now, opt) && matchTags(post, opt) {
+			filtered = append(filtered, post)
 		}
-		matched = append(matched, post)
 	}
 
-	if opt.offset >= len(matched) {
+	if opt.offset >= len(filtered) {
 		return []*content.Post{}
 	}
-	matched = matched[opt.offset:]
+	filtered = filtered[opt.offset:]
 
-	if opt.limit > 0 && opt.limit < len(matched) {
-		matched = matched[:opt.limit]
+	if opt.limit > 0 && opt.limit < len(filtered) {
+		filtered = filtered[:opt.limit]
 	}
 
-	return matched
+	return filtered
 }
 
-func (s *Service) GetTags() []string {
+func (s *PostService) GetTags() []string {
 	return s.index.Load().Tags()
 }
 

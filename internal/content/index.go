@@ -18,6 +18,7 @@ func (c *Content) buildIndex() (*Index, error) {
 	}
 
 	idx := &Index{
+		posts:      make([]*Post, 0, len(bySlug)),
 		bySlug:     bySlug,
 		byTag:      make(map[string][]*Post),
 		byLanguage: make(map[Language][]*Post),
@@ -49,6 +50,9 @@ func (c *Content) buildIndex() (*Index, error) {
 	return idx, nil
 }
 
+// All returns a slice of all posts.
+// WARNING: The returned slice shares backing storage with the index.
+// Callers MUST NOT mutate the slice
 func (i *Index) All() []*Post { return i.posts }
 
 func (i *Index) BySlug(slug string) (*Post, bool) {
@@ -65,14 +69,23 @@ func (i *Index) Tags() []string { return i.tags }
 // sortByNewest orders drafts first (unpublished = newest work, not yet
 // released), then published posts by PublishedAt descending, slug as tiebreak.
 func sortByNewest(posts []*Post) {
-	sort.Slice(posts, func(a, b int) bool {
-		pa, pb := posts[a].PublishedAt, posts[b].PublishedAt
-		if (pa == nil) != (pb == nil) {
-			return pa == nil // draft sorts before published
+	sort.Slice(posts, func(i, j int) bool {
+		postA, postB := posts[i], posts[j]
+
+		isDraftA := postA.PublishedAt == nil
+		isDraftB := postB.PublishedAt == nil
+
+		// Drafts always sort before published posts
+		if isDraftA != isDraftB {
+			return isDraftA
 		}
-		if pa != nil && !pa.Equal(*pb) {
-			return pa.After(*pb)
+
+		// If both are published, sort by date (newest first)
+		if !isDraftA && !postA.PublishedAt.Equal(*postB.PublishedAt) {
+			return postA.PublishedAt.After(*postB.PublishedAt)
 		}
-		return posts[a].Slug < posts[b].Slug
+
+		// Tie-breaker: sort by slug alphabetically
+		return postA.Slug < postB.Slug
 	})
 }

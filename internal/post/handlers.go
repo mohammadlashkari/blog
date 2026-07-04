@@ -1,6 +1,8 @@
 package post
 
 import (
+	"blog/internal/auth"
+	"blog/internal/ui"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
@@ -14,12 +16,12 @@ import (
 	"time"
 )
 
-func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
+func (s *PostService) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	tags := r.URL.Query()["tag"]
 
 	posts := s.GetPosts(
-		withIncludeUnpublished(isAdmin(ctx)),
+		withIncludeUnpublished(auth.IsAdmin(ctx)),
 		withTags(tags...),
 	)
 
@@ -28,7 +30,7 @@ func (s *Service) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	render(w, r, PostsIndexPage(en, fa, tags))
 }
 
-func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
+func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	slug := r.PathValue("slug")
@@ -39,7 +41,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 
 	post, ok := s.GetPostBySlug(
 		slug,
-		withIncludeUnpublished(isAdmin(ctx)),
+		withIncludeUnpublished(auth.IsAdmin(ctx)),
 	)
 	if !ok {
 		http.NotFound(w, r)
@@ -47,7 +49,7 @@ func (s *Service) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
-	render(w, r, PostPage(uiPost, post.Tags, post.HTML, components[post.Embed]))
+	render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
 }
 
 type GitHubPushPayload struct {
@@ -63,7 +65,7 @@ type Repository struct {
 
 const maxWebhookBodyBytes = 5 << 20 // 5MB
 
-func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
+func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	r.Body = http.MaxBytesReader(w, r.Body, maxWebhookBodyBytes)

@@ -1,9 +1,8 @@
 package main
 
 import (
+	"blog/internal/auth"
 	"blog/internal/config"
-	"blog/internal/post"
-	"context"
 	"crypto/subtle"
 	"log/slog"
 	"net"
@@ -123,7 +122,7 @@ func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			isAdmin := false
 
-			if cookie, err := r.Cookie(adminCookie); err == nil {
+			if cookie, err := r.Cookie(auth.CookieName); err == nil {
 				if subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(cfg.AdminToken)) == 1 {
 					isAdmin = true
 				}
@@ -137,7 +136,7 @@ func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
 				}
 			}
 
-			ctx := context.WithValue(r.Context(), post.IsAdminKey, isAdmin)
+			ctx := auth.WithAdmin(r.Context(), isAdmin)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

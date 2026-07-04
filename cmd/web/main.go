@@ -1,6 +1,7 @@
 package main
 
 import (
+	"blog/internal/auth"
 	"blog/internal/config"
 	"blog/internal/content"
 	"blog/internal/post"
@@ -36,6 +37,8 @@ func main() {
 		log.Fatalln("failed to boot post service:", err)
 	}
 
+	authSrv := auth.New(ctx, cfg)
+
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(ui.StaticFS)))
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
@@ -43,6 +46,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
+	authSrv.RegisterRoutes(mux)
 	postSrv.RegisterRoutes(mux)
 
 	handler := chainMiddlewars(
