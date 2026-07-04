@@ -9,9 +9,10 @@ import (
 )
 
 type Service struct {
-	cfg     *config.Config
-	content *content.Content
-	index   atomic.Pointer[content.Index]
+	cfg        *config.Config
+	content    *content.Content
+	index      atomic.Pointer[content.Index]
+	refreshing atomic.Bool
 }
 
 func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*Service, error) {

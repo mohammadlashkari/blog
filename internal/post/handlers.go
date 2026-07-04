@@ -61,9 +61,12 @@ type Repository struct {
 	CloneURL string `json:"clone_url"`
 }
 
+const maxWebhookBodyBytes = 5 << 20 // 5MB
+
 func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
+	r.Body = http.MaxBytesReader(w, r.Body, maxWebhookBodyBytes)
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to read webhook body", "error", err)
@@ -90,7 +93,14 @@ func (s *Service) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !s.refreshing.CompareAndSwap(false, true) {
+		slog.InfoContext(ctx, "content refresh already in progress, skipping")
+		return
+	}
+
 	go func() {
+		defer s.refreshing.Store(false)
+
 		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 		defer cancel()
 
