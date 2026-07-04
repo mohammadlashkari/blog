@@ -5,6 +5,7 @@ import (
 	"blog/internal/content"
 	"context"
 	"sync/atomic"
+	"time"
 )
 
 type Service struct {
@@ -86,7 +87,7 @@ func (s *Service) GetPostBySlug(slug string, opts ...QueryOption) (*content.Post
 	idx := s.index.Load()
 
 	post, ok := idx.BySlug(slug)
-	if !ok || !canView(post, opt) {
+	if !ok || !canView(post, time.Now().UTC(), opt) {
 		return nil, false
 	}
 	if opt.language != nil && post.Language != *opt.language {
@@ -109,9 +110,10 @@ func (s *Service) GetPosts(opts ...QueryOption) []*content.Post {
 
 	// Copy matches into a fresh slice: base shares backing storage with the
 	// immutable snapshot and must not be mutated (offset/limit re-slice below).
+	now := time.Now().UTC()
 	matched := make([]*content.Post, 0, len(base))
 	for _, post := range base {
-		if !canView(post, opt) || !matchTags(post, opt) {
+		if !canView(post, now, opt) || !matchTags(post, opt) {
 			continue
 		}
 		matched = append(matched, post)
@@ -133,8 +135,11 @@ func (s *Service) GetTags() []string {
 	return s.index.Load().Tags()
 }
 
-func canView(p *content.Post, opt queryOptions) bool {
-	return p.PublishedAt != nil || opt.includeUnpublished
+func canView(p *content.Post, now time.Time, opt queryOptions) bool {
+	if opt.includeUnpublished {
+		return true
+	}
+	return p.PublishedAt != nil && !p.PublishedAt.After(now)
 }
 
 func matchTags(p *content.Post, opt queryOptions) bool {

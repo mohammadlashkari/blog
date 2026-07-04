@@ -1,7 +1,12 @@
 package main
 
-import "fmt"
+import (
+	"blog/internal/cli"
+	"os"
+)
 
 func main() {
-	fmt.Println("hello blog cli")
+	if err := cli.Execute(); err != nil {
+		os.Exit(1)
+	}
 }

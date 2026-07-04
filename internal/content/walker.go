@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"errors"
+	"fmt"
 	"io/fs"
 	"log/slog"
 	"os"
@@ -47,6 +48,9 @@ func (c *Content) fsPosts(root string) (map[string]*Post, error) {
 			return nil, r.err // TODO: should return?
 		}
 
+		if _, dup := posts[r.post.Slug]; dup {
+			return nil, fmt.Errorf("duplicate slug %q", r.post.Slug)
+		}
 		posts[r.post.Slug] = r.post
 	}
 
@@ -91,6 +95,9 @@ func (c *Content) walkRepo(done <-chan struct{}, root string) (<-chan string, <-
 func (c *Content) getFm(done <-chan struct{}, paths <-chan string, ch chan<- result) {
 	for path := range paths {
 		post, err := c.decodeFM(path)
+		if err != nil {
+			err = fmt.Errorf("%s: %w", path, err)
+		}
 		select {
 		case ch <- result{post, err}:
 		case <-done:
@@ -122,6 +129,10 @@ func (c *Content) decodeFM(path string) (*Post, error) {
 		HTML:        html.String(),
 		ContentHash: sha256.Sum256(content),
 		FrontMatter: fm,
+	}
+
+	if err := ValidatePost(post); err != nil {
+		return nil, err
 	}
 
 	return post, nil
