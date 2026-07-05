@@ -53,7 +53,7 @@ func main() {
 		mux,
 		recoverPanic,
 		logger,
-		isAdmin(cfg),
+		isAdmin(authSrv),
 		rateLimit(cfg),
 	)
 

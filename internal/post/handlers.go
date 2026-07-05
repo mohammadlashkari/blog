@@ -27,7 +27,7 @@ func (s *PostService) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 
 	en, fa := groupByYearAndLang(posts)
 
-	render(w, r, PostsIndexPage(en, fa, tags))
+	ui.Render(w, r, PostsIndexPage(en, fa, tags))
 }
 
 func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -49,7 +49,7 @@ func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
-	render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
+	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
 }
 
 type GitHubPushPayload struct {

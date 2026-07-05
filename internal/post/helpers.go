@@ -3,23 +3,11 @@ package post
 import (
 	"blog/internal/content"
 	"bytes"
-	"log/slog"
-	"net/http"
 	"sort"
 	"strconv"
 
-	"github.com/a-h/templ"
 	"github.com/mshafiee/jalali"
 )
-
-func render(w http.ResponseWriter, r *http.Request, c templ.Component) {
-	ctx := r.Context()
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := c.Render(ctx, w); err != nil {
-		slog.ErrorContext(ctx, "failed to render page", "path", r.URL.Path, "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
-}
 
 type uiPost struct {
 	*content.Post

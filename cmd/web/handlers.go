@@ -7,10 +7,7 @@ import (
 )
 
 func handleAbout(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := ui.AboutPage().Render(r.Context(), w); err != nil {
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-	}
+	ui.Render(w, r, ui.AboutPage())
 }
 
 func handleHealth(w http.ResponseWriter, r *http.Request) {

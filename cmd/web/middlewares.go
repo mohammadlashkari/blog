@@ -3,7 +3,6 @@ package main
 import (
 	"blog/internal/auth"
 	"blog/internal/config"
-	"crypto/subtle"
 	"log/slog"
 	"net"
 	"net/http"
@@ -117,26 +116,13 @@ func rateLimit(cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-func isAdmin(cfg *config.Config) func(http.Handler) http.Handler {
+func isAdmin(authSrv *auth.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			isAdmin := false
+			ctx := r.Context()
+			isAdmin := authSrv.IsSessionValid(ctx, r) || authSrv.IsBasicAuthValid(ctx, r)
 
-			if cookie, err := r.Cookie(auth.CookieName); err == nil {
-				if subtle.ConstantTimeCompare([]byte(cookie.Value), []byte(cfg.AdminToken)) == 1 {
-					isAdmin = true
-				}
-			}
-
-			if user, pass, ok := r.BasicAuth(); ok {
-				userMatch := subtle.ConstantTimeCompare([]byte(user), []byte(cfg.AdminUser)) == 1
-				passMatch := subtle.ConstantTimeCompare([]byte(pass), []byte(cfg.AdminToken)) == 1
-				if userMatch && passMatch {
-					isAdmin = true
-				}
-			}
-
-			ctx := auth.WithAdmin(r.Context(), isAdmin)
+			ctx = auth.WithAdmin(ctx, isAdmin)
 			next.ServeHTTP(w, r.WithContext(ctx))
 		})
 	}

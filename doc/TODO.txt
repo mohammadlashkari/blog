@@ -11,6 +11,7 @@ Shutdown handle
 Post Assets
 RSS
 Rebuild if changed
+Improve config read
 
 
 Search
