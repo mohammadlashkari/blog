@@ -5,6 +5,8 @@ import "encoding/hex"
 type Config struct {
 	Env               string  `env:"ENV"`
 	Port              string  `env:"PORT"`
+	DBPath            string  `env:"DB_PATH"`
+	SiteURL           string  `env:"SITE_URL"`
 	LimiterRPS        float64 `env:"LIMITER_RPS"`
 	LimiterBurst      int     `env:"LIMITER_BURST"`
 	LimiterEnable     bool    `env:"LIMITER_ENABLE"`
@@ -24,6 +26,8 @@ func New() (*Config, error) {
 	return &Config{
 		Env:               "develop",
 		Port:              "2026",
+		DBPath:            "blog.db",
+		SiteURL:           "myblog",
 		LocalContentPath:  "/home/mohammad/blog-content",
 		RemoteContentPath: "https://github.com/mohammadlashkari/blog-content.git",
 		LimiterEnable:     false,

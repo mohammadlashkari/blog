@@ -11,7 +11,26 @@ Shutdown handle
 Post Assets
 RSS
 Rebuild if changed
-Improve config read
-
-
+Improve config read + Refresh config on sig
 Search
+Tag -> #
+Is_favorite
+
+
+feeds.yaml
+      ↓
+fetch feed
+      ↓
+Does rss_items already contain this feed?
+
+        YES --------------------------+
+         |                            |
+         |                            |
+new item → seen = false               |
+                                      |
+        NO                            |
+         |                            |
+first import                          |
+         |                            |
+store all items                       |
+seen = true --------------------------+

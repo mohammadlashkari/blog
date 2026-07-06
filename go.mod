@@ -6,6 +6,8 @@ tool github.com/a-h/templ/cmd/templ
 
 require (
 	github.com/a-h/templ v0.3.1020
+	github.com/golang-migrate/migrate/v4 v4.19.1
+	github.com/mattn/go-sqlite3 v1.14.22
 	github.com/mshafiee/jalali v1.1.0
 	github.com/spf13/cobra v1.10.2
 	github.com/yuin/goldmark v1.7.13
