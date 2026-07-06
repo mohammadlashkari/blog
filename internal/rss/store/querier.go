@@ -11,6 +11,7 @@ import (
 type Querier interface {
 	CheckFeedExists(ctx context.Context, feedUrl string) (bool, error)
 	CreateRssItem(ctx context.Context, arg CreateRssItemParams) error
+	DeleteByFeedUR(ctx context.Context, feedUrl string) error
 	GetItemsByStatus(ctx context.Context, arg GetItemsByStatusParams) ([]RssItem, error)
 	ToggleSavedStatus(ctx context.Context, arg ToggleSavedStatusParams) error
 	UpdateItemStatus(ctx context.Context, arg UpdateItemStatusParams) error

@@ -97,6 +97,7 @@ func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 
 	if !s.refreshing.CompareAndSwap(false, true) {
 		slog.InfoContext(ctx, "content refresh already in progress, skipping")
+		w.WriteHeader(http.StatusAccepted)
 		return
 	}
 
@@ -111,7 +112,13 @@ func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.index.Store(idx)
+
+		if err := s.rssSvc.SyncFeeds(ctx); err != nil {
+			slog.ErrorContext(ctx, "rss synchronization failed", "error", err)
+		}
 	}()
+
+	w.WriteHeader(http.StatusAccepted)
 }
 
 func verifyGitHubSignature(payload []byte, signature, secret string) bool {

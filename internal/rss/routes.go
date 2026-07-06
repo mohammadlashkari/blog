@@ -1,7 +1,13 @@
 package rss
 
-import "net/http"
+import (
+	"blog/internal/auth"
+	"net/http"
+)
 
-func (rs *RSSService) RegisterRoutes(mux *http.ServeMux) {
-	mux.HandleFunc("GET /reading-list", rs.handleReadingListPage)
+func (s *Service) RegisterRoutes(mux *http.ServeMux) {
+	mux.HandleFunc("GET /reading", s.handleReadingPage)
+
+	refreshHandler := http.HandlerFunc(s.handleRefreshReading)
+	mux.Handle("POST /rss/refresh", auth.RequireAdmin(refreshHandler))
 }

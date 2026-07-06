@@ -21,7 +21,7 @@ type Config struct {
 	ContentFilename   string  `env:"CONTENT_FILENAME"`
 }
 
-func New() (*Config, error) {
+func Load() (*Config, error) {
 	s, _ := hex.DecodeString("13d6b4dff8f84a10851021ec8608f814570d562c92fe6b5ec4c9f595bcb3234b")
 	return &Config{
 		Env:               "develop",

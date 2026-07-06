@@ -2,7 +2,6 @@ package content
 
 import (
 	"bytes"
-	"crypto/sha256"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -127,8 +126,8 @@ func (c *Content) decodeFM(path string) (*Post, error) {
 
 	post := &Post{
 		HTML:        html.String(),
-		ContentHash: sha256.Sum256(content),
 		FrontMatter: fm,
+		// ContentHash: md5.Sum(content),
 	}
 
 	if err := ValidatePost(post); err != nil {

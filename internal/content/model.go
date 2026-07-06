@@ -1,7 +1,7 @@
 package content
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
 	"time"
 )
 
@@ -27,5 +27,5 @@ type FrontMatter struct {
 type Post struct {
 	FrontMatter
 	HTML        string
-	ContentHash [sha256.Size]byte
+	ContentHash [md5.Size]byte
 }

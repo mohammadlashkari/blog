@@ -4,12 +4,11 @@ import (
 	"blog/internal/auth"
 	"blog/internal/config"
 	"blog/internal/content"
-	"blog/internal/migration"
+	"blog/internal/db"
 	"blog/internal/post"
 	"blog/internal/rss"
 	"blog/internal/rss/store"
 	"context"
-	"database/sql"
 	"log"
 	"log/slog"
 	"net"
@@ -17,31 +16,25 @@ import (
 	"os"
 
 	"blog/internal/ui"
-
-	_ "github.com/mattn/go-sqlite3"
 )
 
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.New()
+	cfg, err := config.Load()
 	if err != nil {
 		log.Fatalln("failed to load config:", err)
 	}
 
 	setupLogger(cfg.Env)
 
-	db, err := openDB(ctx, cfg.DBPath)
+	db, err := db.Open(ctx, cfg.DBPath)
 	if err != nil {
 		log.Fatalln("failed to open db connection:", err)
 	}
 	defer db.Close()
 
-	if err := migration.UP(cfg.DBPath); err != nil {
-		log.Fatalln("failed to do migration up:", err)
-	}
-
-	rssSrv := rss.New(
+	rssSvc := rss.New(
 		cfg,
 		store.NewRSSStore(db),
 	)
@@ -53,12 +46,12 @@ func main() {
 		cfg.ContentFilename,
 	)
 
-	postSrv, err := post.New(ctx, cfg, cont)
+	postSvc, err := post.New(ctx, cfg, cont, rssSvc)
 	if err != nil {
 		log.Fatalln("failed to boot post service:", err)
 	}
 
-	authSrv := auth.New(ctx, cfg)
+	authSvc := auth.New(ctx, cfg)
 
 	mux := http.NewServeMux()
 	mux.Handle("/static/", http.FileServer(http.FS(ui.StaticFS)))
@@ -67,15 +60,15 @@ func main() {
 	})
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
-	authSrv.RegisterRoutes(mux)
-	postSrv.RegisterRoutes(mux)
-	rssSrv.RegisterRoutes(mux)
+	authSvc.RegisterRoutes(mux)
+	postSvc.RegisterRoutes(mux)
+	rssSvc.RegisterRoutes(mux)
 
 	handler := chainMiddlewars(
 		mux,
 		recoverPanic,
 		logger,
-		isAdmin(authSrv),
+		isAdmin(authSvc),
 		rateLimit(cfg),
 	)
 
@@ -88,19 +81,6 @@ func main() {
 	if err := srv.ListenAndServe(); err != nil {
 		log.Fatalln("listen and serve:", err)
 	}
-}
-
-func openDB(ctx context.Context, dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dbPath)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := db.PingContext(ctx); err != nil {
-		return nil, err
-	}
-
-	return db, nil
 }
 
 func setupLogger(env string) {

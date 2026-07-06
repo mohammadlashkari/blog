@@ -1,9 +1,74 @@
 package rss
 
-import "blog/internal/ui"
+import (
+	"blog/internal/rss/store"
+	"blog/internal/ui"
+)
 
-templ ReadingListPage() {
+templ ReadingPage(items []store.RssItem) {
 	@ui.Layout("Reading List") {
-		<h1>reading list</h1>
+		<div class="max-w-6xl mx-auto p-6">
+			<h1 class="text-3xl font-bold mb-8">Reading List</h1>
+			if len(items) == 0 {
+				<div class="text-center py-12 text-gray-500">
+					<p class="text-xl">No items in your reading list yet.</p>
+				</div>
+			} else {
+				<div class="space-y-6">
+					for _, item := range items {
+						<div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
+							<div class="flex justify-between items-start gap-4">
+								<div class="flex-1 min-w-0">
+									<a
+										href={ item.Link }
+										target="_blank"
+										class="block text-xl font-semibold text-blue-600 hover:text-blue-800 line-clamp-2"
+									>
+										{ item.Title }
+									</a>
+									<div class="text-sm text-gray-500 mt-1">
+										{ item.FeedName }
+										<span class="mx-2">•</span>
+										{ item.PublishedAt.Format("Jan 02, 2006") }
+									</div>
+									if item.Description != nil && *item.Description != "" {
+										<p class="mt-3 text-gray-600 line-clamp-3">
+											{ *item.Description }
+										</p>
+									}
+									<div class="flex items-center gap-3 mt-4 text-sm">
+										if item.IsSaved {
+											<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">
+												Saved
+											</span>
+										}
+										if item.SeenAt != nil {
+											<span class="text-gray-400">✓ Seen</span>
+										}
+									</div>
+								</div>
+								<div class="flex flex-col items-end gap-2 text-xs text-gray-400 whitespace-nowrap">
+									<div>{ item.Status }</div>
+									if item.PublishedAt != nil {
+										<div class="text-right">
+											{ item.PublishedAt.Format("15:04") }
+										</div>
+									}
+								</div>
+							</div>
+							<div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
+								<a
+									href={ item.Link }
+									target="_blank"
+									class="text-blue-600 hover:text-blue-700 font-medium text-sm"
+								>
+									Read full article →
+								</a>
+							</div>
+						</div>
+					}
+				</div>
+			}
+		</div>
 	}
 }

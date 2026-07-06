@@ -116,11 +116,11 @@ func rateLimit(cfg *config.Config) func(http.Handler) http.Handler {
 	}
 }
 
-func isAdmin(authSrv *auth.AuthService) func(http.Handler) http.Handler {
+func isAdmin(authSvc *auth.AuthService) func(http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
-			isAdmin := authSrv.IsSessionValid(ctx, r) || authSrv.IsBasicAuthValid(ctx, r)
+			isAdmin := authSvc.IsSessionValid(ctx, r) || authSvc.IsBasicAuthValid(ctx, r)
 
 			ctx = auth.WithAdmin(ctx, isAdmin)
 			next.ServeHTTP(w, r.WithContext(ctx))

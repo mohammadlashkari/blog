@@ -4,22 +4,28 @@ import (
 	"blog/internal/config"
 	"blog/internal/rss/store"
 	"context"
-	"encoding/xml"
+	"crypto/md5"
 	"fmt"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
+	"sync/atomic"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
-type RSSService struct {
-	cfg         *config.Config
-	store       store.Storer
-	httpClient  *http.Client
-	readingList []string
+type Service struct {
+	cfg        *config.Config
+	store      store.Storer
+	httpClient *http.Client
+	refreshing atomic.Bool
+	lastHash   [md5.Size]byte
 }
 
-func New(cfg *config.Config, store store.Storer) *RSSService {
-	return &RSSService{
+func New(cfg *config.Config, store store.Storer) *Service {
+	return &Service{
 		cfg:   cfg,
 		store: store,
 		httpClient: &http.Client{
@@ -28,114 +34,69 @@ func New(cfg *config.Config, store store.Storer) *RSSService {
 	}
 }
 
-// reading-list.md
-var feed_list = []string{
-	"https://techcrunch.com/feed/",
-	"https://www.wagslane.dev/index.xml",
-	"https://news.ycombinator.com/rss",
+type FollowedFeed struct {
+	URL  string `yaml:"url"`
+	Name string `yaml:"name"`
 }
 
-type Feed struct {
-	Channel Channel `xml:"channel"`
+type Reading struct {
+	Feeds []FollowedFeed `yaml:"feeds"`
 }
 
-type Channel struct {
-	Title         string `xml:"title"`
-	Link          string `xml:"link"`
-	Description   string `xml:"description"`
-	Language      string `xml:"language"`
-	LastBuildDate string `xml:"lastBuildDate"`
-	Items         []Item `xml:"item"`
+// SyncFeeds is triggered by your web-push hook.
+// It skips fetching if the configuration file hasn't changed.
+func (s *Service) SyncFeeds(ctx context.Context) error {
+	slog.InfoContext(ctx, "starting rss sync via webhook")
+	return s.refresh(ctx, true)
 }
 
-type Item struct {
-	GUID        string   `xml:"guid"`
-	Title       string   `xml:"title"`
-	Author      string   `xml:"author"`
-	Link        string   `xml:"link"`
-	Description string   `xml:"description"`
-	Categories  []string `xml:"category"`
-	PubDate     string   `xml:"pubDate"`
+// FetchAll is triggered by your cron job.
+// It bypasses the file hash check to fetch fresh content from all feeds.
+func (s *Service) FetchAll(ctx context.Context) error {
+	slog.InfoContext(ctx, "starting periodic cron rss fetch")
+	return s.refresh(ctx, false)
 }
 
-// cron job
-func (rs *RSSService) Run() {
+func (s *Service) refresh(ctx context.Context, checkHash bool) error {
+	if !s.refreshing.CompareAndSwap(false, true) {
+		slog.InfoContext(ctx, "rss refresh already in progress, skipping")
+		return nil
+	}
+	defer s.refreshing.Store(false)
 
-}
-
-func (rs *RSSService) FetchFeed(ctx context.Context, feedURL string) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedURL, nil)
+	path := filepath.Join(s.cfg.LocalContentPath, "reading", "feeds.md") // TODO
+	data, err := os.ReadFile(path)
 	if err != nil {
-		return err
-	}
-	req.Header.Set("User-Agent", "mohammadlashkari.com (RSS Reader)")
-
-	resp, err := rs.httpClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %s for %s", resp.Status, feedURL)
+		slog.ErrorContext(ctx, "failed to read feeds file", "path", path, "error", err)
+		return fmt.Errorf("failed to read feeds file: %w", err)
 	}
 
-	var f Feed
-	if err := xml.NewDecoder(resp.Body).Decode(&f); err != nil {
-		return fmt.Errorf("decode rss feed %s: %w", feedURL, err)
+	var r Reading
+	if err := yaml.Unmarshal(data, &r); err != nil {
+		slog.ErrorContext(ctx, "failed to unmarshal feeds yaml", "error", err)
+		return fmt.Errorf("failed to unmarshal feeds yaml: %w", err)
 	}
 
-	exist, err := rs.store.CheckFeedExists(ctx, feedURL)
-	if err != nil {
-		slog.ErrorContext(ctx, "check feed exists", "error", err)
-		return fmt.Errorf("check feed exists: %w", err)
+	newHash := md5.Sum(data)
+	if checkHash && s.lastHash == newHash {
+		slog.InfoContext(ctx, "feeds file unchanged, skipping remote fetch")
+		return nil
 	}
 
-	status := "unread"
-	if !exist {
-		status = "archived"
-	}
-
-	for _, item := range f.Channel.Items {
-		// Fallback for missing GUID
-		guid := item.GUID
-		if guid == "" {
-			guid = item.Link
-		}
-		if guid == "" {
-			slog.WarnContext(ctx, "skipping item with no guid or link", "feed", feedURL)
+	var errs []error
+	for _, feed := range r.Feeds {
+		if err := s.fetchFeed(ctx, feed); err != nil {
+			slog.ErrorContext(ctx, "fetch feed failed", "feed", feed, "error", err)
+			errs = append(errs, fmt.Errorf("feed %s: %w", feed, err))
 			continue
 		}
+	}
 
-		var description *string
-		if item.Description != "" {
-			description = &item.Description
-		}
+	s.lastHash = newHash
+	slog.InfoContext(ctx, "rss refresh process completed")
 
-		var pubDatePtr *time.Time
-		if item.PubDate != "" {
-			pubDate, err := time.Parse(time.RFC1123, item.PubDate)
-			if err == nil {
-				pubDatePtr = &pubDate
-			} else {
-				slog.WarnContext(ctx, "failed to parse pub date, leaving nil", "date", item.PubDate)
-			}
-		}
-
-		err = rs.store.CreateRssItem(ctx, store.CreateRssItemParams{
-			Guid:        guid,
-			Link:        item.Link,
-			Title:       item.Title,
-			Description: description,
-			FeedUrl:     feedURL,
-			Status:      status,
-			PublishedAt: pubDatePtr,
-		})
-		if err != nil {
-			slog.WarnContext(ctx, "failed to create rss item", "guid", guid, "error", err)
-			continue
-		}
-
+	if len(errs) > 0 {
+		return fmt.Errorf("completed with %d feed errors", len(errs))
 	}
 
 	return nil

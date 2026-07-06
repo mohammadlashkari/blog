@@ -8,10 +8,10 @@ import (
 	"net/http"
 )
 
-func (rs *RSSService) handleReadingListPage(w http.ResponseWriter, r *http.Request) {
+func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	items, err := rs.store.GetItemsByStatus(ctx, store.GetItemsByStatusParams{
+	items, err := s.store.GetItemsByStatus(ctx, store.GetItemsByStatusParams{
 		Status: "archived",
 		Limit:  10,
 	})
@@ -22,8 +22,17 @@ func (rs *RSSService) handleReadingListPage(w http.ResponseWriter, r *http.Reque
 	}
 
 	for _, l := range items {
-		fmt.Println("----", l)
+		fmt.Println("---->", l.FeedName, l.FeedUrl, l.Link)
 	}
 
-	ui.Render(w, r, ReadingListPage())
+	ui.Render(w, r, ReadingPage(items))
+}
+
+func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
+	if err := s.FetchAll(r.Context()); err != nil {
+		http.Error(w, "failed to refresh", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }

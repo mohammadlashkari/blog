@@ -11,9 +11,9 @@ LIMIT ? OFFSET ?;
 
 -- name: CreateRssItem :exec
 INSERT INTO rss_items (
-    feed_url, guid, link, title, description, published_at, status
+    feed_name, feed_url, guid, link, title, description, published_at, status
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(feed_url, guid) DO NOTHING;
 
@@ -26,3 +26,7 @@ WHERE id = ?;
 UPDATE rss_items
 SET is_saved = ?
 WHERE id = ?;
+
+-- name: DeleteByFeedUR :exec
+DELETE FROM rss_items
+WHERE feed_url = ?

@@ -16,7 +16,7 @@ type RSSStore struct {
 	*Queries
 }
 
-func NewRSSStore(db *sql.DB) *RSSStore {
+func NewRSSStore(db *sql.DB) Storer {
 	return &RSSStore{
 		db:      db,
 		Queries: New(db),

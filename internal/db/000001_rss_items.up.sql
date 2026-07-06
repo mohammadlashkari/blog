@@ -1,5 +1,6 @@
 CREATE TABLE IF NOT EXISTS rss_items (
     id INTEGER PRIMARY KEY,
+    feed_name TEXT NOT NULL,
     feed_url TEXT NOT NULL,
     guid TEXT NOT NULL, -- fallback to link if feed lacks guid
     link TEXT NOT NULL,

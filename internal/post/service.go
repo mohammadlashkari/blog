@@ -3,6 +3,7 @@ package post
 import (
 	"blog/internal/config"
 	"blog/internal/content"
+	"blog/internal/rss"
 	"context"
 	"sync/atomic"
 	"time"
@@ -13,9 +14,12 @@ type PostService struct {
 	content    *content.Content
 	index      atomic.Pointer[content.Index]
 	refreshing atomic.Bool
+	rssSvc     *rss.Service
 }
 
-func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*PostService, error) {
+func New(
+	ctx context.Context, cfg *config.Config, cont *content.Content, rssSvc *rss.Service,
+) (*PostService, error) {
 	idx, err := cont.Build(ctx)
 	if err != nil {
 		return nil, err
@@ -23,6 +27,7 @@ func New(ctx context.Context, cfg *config.Config, cont *content.Content) (*PostS
 	s := &PostService{
 		cfg:     cfg,
 		content: cont,
+		rssSvc:  rssSvc,
 	}
 	s.index.Store(idx)
 

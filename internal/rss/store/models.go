@@ -10,6 +10,7 @@ import (
 
 type RssItem struct {
 	ID          int64      `json:"id"`
+	FeedName    string     `json:"feed_name"`
 	FeedUrl     string     `json:"feed_url"`
 	Guid        string     `json:"guid"`
 	Link        string     `json:"link"`
