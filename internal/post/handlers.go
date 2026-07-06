@@ -2,12 +2,15 @@ package post
 
 import (
 	"blog/internal/auth"
+	"blog/internal/content"
+	"blog/internal/rss"
 	"blog/internal/ui"
 	"context"
 	"crypto/hmac"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
+	"encoding/xml"
 	"fmt"
 	"io"
 	"log/slog"
@@ -18,7 +21,11 @@ import (
 
 func (s *PostService) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
 	tags := r.URL.Query()["tag"]
+	if len(tags) == 0 {
+		tags = s.GetTags()
+	}
 
 	posts := s.GetPosts(
 		withIncludeUnpublished(auth.IsAdmin(ctx)),
@@ -119,6 +126,66 @@ func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	w.WriteHeader(http.StatusAccepted)
+}
+
+func (s *PostService) handleRSS(lang *content.Language) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		opts := []QueryOption{}
+
+		langStr := ""
+		if lang != nil {
+			langStr = string(*lang)
+			opts = append(opts, withLanguage(*lang))
+		}
+		posts := s.GetPosts(opts...)
+
+		rss, err := buildRSS(langStr, s.cfg.SiteURL, posts)
+		if err != nil {
+			slog.ErrorContext(r.Context(), "failed to build rss", "erro", err)
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
+		w.Header().Set("Cache-Control", "public, max-age=3600")
+		w.Write(rss)
+	}
+}
+
+func buildRSS(lang string, siteURL string, posts []*content.Post) ([]byte, error) {
+	ch := rss.Channel{
+		Title:       "Mohammad's blog",
+		Link:        siteURL,
+		Description: "Thoughts, notes, and experiments",
+		Copyright:   fmt.Sprintf("Copyright © 2025–%d Mohammad", time.Now().Year()),
+		Language:    lang,
+		Docs:        "https://www.rssboard.org/rss-specification",
+	}
+
+	if len(posts) > 0 && posts[0].PublishedAt != nil {
+		ch.LastBuildDate = posts[0].PublishedAt.Format(time.RFC1123)
+	}
+
+	for _, p := range posts {
+		link := siteURL + "/post/" + p.Slug
+		item := rss.Item{
+			GUID:        link,
+			Title:       p.Title,
+			Link:        link,
+			Author:      "Mohammad Lashkari",
+			Description: p.Description,
+			Categories:  p.Tags,
+			PubDate:     p.PublishedAt.Format(time.RFC1123),
+		}
+		ch.Items = append(ch.Items, item)
+	}
+
+	body, err := xml.MarshalIndent(ch, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	return append([]byte(xml.Header), body...), nil
 }
 
 func verifyGitHubSignature(payload []byte, signature, secret string) bool {

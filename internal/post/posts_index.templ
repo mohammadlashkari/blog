@@ -21,7 +21,7 @@ templ PostsIndexPage(
 					for _, tag := range tags {
 						<li>
 							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
-								{ tag }
+								{ "#" + tag }
 							</a>
 						</li>
 					}
@@ -61,6 +61,9 @@ templ PostList(posts []uiPost) {
 					{ post.Title }
 				</a>
 				<small class="post-date">
+					if post.IsFavorite {
+						<span>★</span>
+					}
 					{ post.displayDate }
 				</small>
 			</li>

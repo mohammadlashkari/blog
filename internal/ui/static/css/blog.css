@@ -296,27 +296,6 @@ article.post {
 	font-size: clamp(1.9rem, 1.4rem + 2vw, 2.6rem);
 }
 
-/* tag chips */
-.post-tags {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.5rem;
-	margin-top: 1rem;
-}
-.post-tags .tag {
-	font-size: 0.78rem;
-	color: var(--pico-muted-color);
-	text-decoration: none;
-	border: 1px solid var(--pico-muted-border-color);
-	border-radius: 999px;
-	padding: 0.15rem 0.7rem;
-	transition: border-color 0.15s ease, color 0.15s ease;
-}
-.post-tags .tag:hover {
-	color: var(--pico-primary);
-	border-color: var(--pico-primary);
-}
-
 /* prose */
 .post-content {
 	line-height: 1.75;

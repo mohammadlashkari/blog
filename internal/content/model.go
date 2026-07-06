@@ -16,6 +16,7 @@ type FrontMatter struct {
 	Title       string     `yaml:"title"`
 	Slug        string     `yaml:"slug"`
 	CoverImage  string     `yaml:"cover_image"`
+	Description string     `yaml:"description"`
 	Language    Language   `yaml:"language"`
 	IsFavorite  bool       `yaml:"is_favorite"`
 	Tags        []string   `yaml:"tags"`

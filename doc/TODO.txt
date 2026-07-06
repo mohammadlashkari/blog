@@ -13,8 +13,6 @@ RSS
 Rebuild if changed
 Improve config read + Refresh config on sig
 Search
-Tag -> #
-Is_favorite
 
 
 feeds.yaml

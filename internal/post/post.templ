@@ -10,18 +10,19 @@ templ PostPage(post uiPost, tags []string, htmlContent string, component templ.C
 		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
 			<header class="post-header">
 				<div class="post-date">
+					if post.IsFavorite {
+						<span>★</span>
+					}
 					{ post.displayDate }
 				</div>
 				<h1 class="post-title">{ post.Title }</h1>
-				if len(tags) > 0 {
-					<div class="post-tags">
-						for _, tag := range tags {
-							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
-								{ tag }
-							</a>
-						}
-					</div>
-				}
+				<div>
+					for _, tag := range tags {
+						<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
+							{ "#" + tag }
+						</a>
+					}
+				</div>
 			</header>
 			<div class="post-content">
 				@templ.Raw(htmlContent)

@@ -26,7 +26,9 @@ type Channel struct {
 	Link          string `xml:"link"`
 	Description   string `xml:"description"`
 	Language      string `xml:"language"`
+	Copyright     string `xml:"copyright"`
 	LastBuildDate string `xml:"lastBuildDate"`
+	Docs          string `xml:"docs"`
 	Items         []Item `xml:"item"`
 }
 
