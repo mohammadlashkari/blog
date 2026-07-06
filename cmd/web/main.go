@@ -21,7 +21,7 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg, err := config.Load()
+	cfg, err := config.Dev()
 	if err != nil {
 		log.Fatalln("failed to load config:", err)
 	}
