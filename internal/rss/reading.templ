@@ -28,8 +28,10 @@ templ ReadingPage(items []store.RssItem) {
 									</a>
 									<div class="text-sm text-gray-500 mt-1">
 										{ item.FeedName }
-										<span class="mx-2">•</span>
-										{ item.PublishedAt.Format("Jan 02, 2006") }
+										if item.PublishedAt != nil {
+											<span class="mx-2">•</span>
+											{ item.PublishedAt.Format("Jan 02, 2006") }
+										}
 									</div>
 									if item.Description != nil && *item.Description != "" {
 										<p class="mt-3 text-gray-600 line-clamp-3">

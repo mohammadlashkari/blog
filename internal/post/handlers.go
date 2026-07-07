@@ -180,7 +180,9 @@ func buildRSS(lang string, siteURL string, posts []*content.Post) ([]byte, error
 		ch.Items = append(ch.Items, item)
 	}
 
-	body, err := xml.MarshalIndent(ch, "", "  ")
+	feed := rss.Feed{Version: "2.0", Channel: ch}
+
+	body, err := xml.MarshalIndent(feed, "", "  ")
 	if err != nil {
 		return nil, err
 	}

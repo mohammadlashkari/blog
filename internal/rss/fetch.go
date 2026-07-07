@@ -19,7 +19,9 @@ const (
 )
 
 type Feed struct {
-	Channel Channel `xml:"channel"`
+	XMLName xml.Name `xml:"rss"`
+	Version string   `xml:"version,attr"`
+	Channel Channel  `xml:"channel"`
 }
 
 type Channel struct {
