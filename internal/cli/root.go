@@ -1,17 +1,27 @@
 package cli
 
-import "github.com/spf13/cobra"
+import (
+	"blog/internal/config"
+
+	"github.com/spf13/cobra"
+)
 
 func Execute() error {
-	return rootCmd().Execute()
+	cfg, err := config.Dev()
+	if err != nil {
+		return err
+	}
+
+	return rootCmd(cfg).Execute()
 }
 
-func rootCmd() *cobra.Command {
+func rootCmd(cfg *config.Config) *cobra.Command {
 	root := &cobra.Command{
 		Use:   "blog",
 		Short: "My blog CLI",
 	}
 
-	root.AddCommand(validateCmd())
+	root.AddCommand(postCmd())
+	root.AddCommand(rssCmd(cfg))
 	return root
 }

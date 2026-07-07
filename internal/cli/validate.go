@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func validateCmd() *cobra.Command {
+func postValidateCmd() *cobra.Command {
 	var filename string
 
 	cmd := &cobra.Command{
