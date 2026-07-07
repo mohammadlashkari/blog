@@ -32,7 +32,7 @@ func (c *Content) fsPosts(root string) (map[string]*Post, error) {
 	var wg sync.WaitGroup
 	for range walkWorkersNum {
 		wg.Go(func() {
-			c.getFm(done, paths, result)
+			c.getPost(done, paths, result)
 		})
 	}
 
@@ -91,9 +91,9 @@ func (c *Content) walkRepo(done <-chan struct{}, root string) (<-chan string, <-
 	return paths, errc
 }
 
-func (c *Content) getFm(done <-chan struct{}, paths <-chan string, ch chan<- result) {
+func (c *Content) getPost(done <-chan struct{}, paths <-chan string, ch chan<- result) {
 	for path := range paths {
-		post, err := c.decodeFM(path)
+		post, err := c.decodePost(path)
 		if err != nil {
 			err = fmt.Errorf("%s: %w", path, err)
 		}
@@ -105,16 +105,19 @@ func (c *Content) getFm(done <-chan struct{}, paths <-chan string, ch chan<- res
 	}
 }
 
-func (c *Content) decodeFM(path string) (*Post, error) {
+func (c *Content) decodePost(path string) (*Post, error) {
 	content, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}
 
+	dir := filepath.Dir(path)
+
+	md := newMDParser(dir)
 	mdCtx := parser.NewContext()
 
-	var html bytes.Buffer
-	if err := c.md.Convert(content, &html, parser.WithContext(mdCtx)); err != nil {
+	var buf bytes.Buffer
+	if err := md.Convert(content, &buf, parser.WithContext(mdCtx)); err != nil {
 		slog.Error("failed to convert markdown to html", "error", err)
 		return nil, err
 	}
@@ -125,7 +128,7 @@ func (c *Content) decodeFM(path string) (*Post, error) {
 	}
 
 	post := &Post{
-		HTML:        html.String(),
+		HTML:        buf.String(),
 		FrontMatter: fm,
 		// ContentHash: md5.Sum(content),
 	}

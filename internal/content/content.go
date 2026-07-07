@@ -5,11 +5,15 @@ import (
 	"log/slog"
 	"path/filepath"
 
+	img64 "github.com/tenkoh/goldmark-img64"
 	"github.com/yuin/goldmark"
+
+	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
 	"go.abhg.dev/goldmark/frontmatter"
+	"go.abhg.dev/goldmark/mermaid"
 )
 
 type Content struct {
@@ -28,24 +32,30 @@ func New(localPath, remotePath, branch, contentFilename string) *Content {
 		branch:          branch,
 		postsPath:       filepath.Join(localPath, "posts"),
 		contentFilename: contentFilename,
-		md:              mdParser(),
 	}
 }
 
-func mdParser() goldmark.Markdown {
+func newMDParser(path string) goldmark.Markdown {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
 			extension.Linkify,
+			extension.Footnote,
+			extension.Typographer,
+			img64.Img64,
+			highlighting.Highlighting,
+			&mermaid.Extender{},
 			&frontmatter.Extender{},
 		),
 		goldmark.WithParserOptions(
+			parser.WithAttribute(),
 			parser.WithAutoHeadingID(),
 		),
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
 			html.WithXHTML(),
 			html.WithUnsafe(),
+			img64.WithPathResolver(img64.ParentLocalPathResolver(path)),
 		),
 	)
 
