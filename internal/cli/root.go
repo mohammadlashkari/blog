@@ -22,6 +22,6 @@ func rootCmd(cfg *config.Config) *cobra.Command {
 	}
 
 	root.AddCommand(postCmd())
-	root.AddCommand(rssCmd(cfg))
+	root.AddCommand(readingCmd(cfg))
 	return root
 }

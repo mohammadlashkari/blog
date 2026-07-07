@@ -43,21 +43,21 @@ type Reading struct {
 	Feeds []FollowedFeed `yaml:"feeds"`
 }
 
-// SyncFeeds is triggered by your web-push hook.
+// Sync is triggered by your web-push hook.
 // It skips fetching if the configuration file hasn't changed.
-func (s *Service) SyncFeeds(ctx context.Context) error {
+func (s *Service) Sync(ctx context.Context) error {
 	slog.InfoContext(ctx, "starting rss sync via webhook")
-	return s.refresh(ctx, true)
+	return s.update(ctx, true)
 }
 
-// FetchAll is triggered by your cron job.
+// Refresh is triggered by your cron job.
 // It bypasses the file hash check to fetch fresh content from all feeds.
-func (s *Service) FetchAll(ctx context.Context) error {
+func (s *Service) Refresh(ctx context.Context) error {
 	slog.InfoContext(ctx, "starting periodic cron rss fetch")
-	return s.refresh(ctx, false)
+	return s.update(ctx, false)
 }
 
-func (s *Service) refresh(ctx context.Context, checkHash bool) error {
+func (s *Service) update(ctx context.Context, checkHash bool) error {
 	if !s.refreshing.CompareAndSwap(false, true) {
 		slog.InfoContext(ctx, "rss refresh already in progress, skipping")
 		return nil

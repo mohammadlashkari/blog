@@ -10,22 +10,22 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func rssCmd(cfg *config.Config) *cobra.Command {
+func readingCmd(cfg *config.Config) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "rss",
+		Use:   "reading",
 		Short: "Manage RSS reading",
 	}
 
-	cmd.AddCommand(rssSyncCmd(cfg))
-	cmd.AddCommand(rssListCmd())
-	cmd.AddCommand(rssAddCmd())
+	cmd.AddCommand(readingRefreshCmd(cfg))
+	cmd.AddCommand(readingListCmd())
+	cmd.AddCommand(readingAddCmd())
 	return cmd
 }
 
-func rssSyncCmd(cfg *config.Config) *cobra.Command {
+func readingRefreshCmd(cfg *config.Config) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "sync",
-		Short: "Fetch followed feeds",
+		Use:   "refresh",
+		Short: "Refresh followed feeds",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			ctx := cmd.Context()
 
@@ -40,11 +40,11 @@ func rssSyncCmd(cfg *config.Config) *cobra.Command {
 				store.NewRSSStore(db),
 			)
 
-			if err := svc.FetchAll(ctx); err != nil {
-
+			if err := svc.Refresh(ctx); err != nil {
+				return fmt.Errorf("failed to refresh reading list: %w", err)
 			}
 
-			cmd.Println("rss feeds refreshed")
+			cmd.Println("reading list refreshed")
 			return nil
 		},
 	}
@@ -52,7 +52,7 @@ func rssSyncCmd(cfg *config.Config) *cobra.Command {
 	return cmd
 }
 
-func rssListCmd() *cobra.Command {
+func readingListCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "list",
 		Short: "List followed feeds",
@@ -64,7 +64,7 @@ func rssListCmd() *cobra.Command {
 	return cmd
 }
 
-func rssAddCmd() *cobra.Command {
+func readingAddCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add <feed-url>",
 		Short: "Follow new feed",

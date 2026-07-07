@@ -20,8 +20,8 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
-	if err := s.FetchAll(r.Context()); err != nil {
-		http.Error(w, "failed to refresh", http.StatusInternalServerError)
+	if err := s.Refresh(r.Context()); err != nil {
+		http.Error(w, "failed to refresh reading list", http.StatusInternalServerError)
 		return
 	}
 
