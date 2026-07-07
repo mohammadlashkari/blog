@@ -1,4 +1,4 @@
 bin
 .env
 wasm_exec*.js
-*.db
+*blog.db*

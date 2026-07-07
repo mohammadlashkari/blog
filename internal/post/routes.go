@@ -11,7 +11,7 @@ func (s *PostService) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /webhook", s.handleWebhook)
 
 	en, fa := content.LanguageEn, content.LanguageFa
-	mux.HandleFunc("GET /rss.xml", s.handleRSS(nil)) // All
-	mux.HandleFunc("GET /rss/en.xml", s.handleRSS(&en))
-	mux.HandleFunc("GET /rss/fa.xml", s.handleRSS(&fa))
+	mux.HandleFunc("GET /feed.xml", s.handleFeed(nil)) // All
+	mux.HandleFunc("GET /feed/en.xml", s.handleFeed(&en))
+	mux.HandleFunc("GET /feed/fa.xml", s.handleFeed(&fa))
 }

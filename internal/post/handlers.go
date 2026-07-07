@@ -128,7 +128,7 @@ func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusAccepted)
 }
 
-func (s *PostService) handleRSS(lang *content.Language) http.HandlerFunc {
+func (s *PostService) handleFeed(lang *content.Language) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		opts := []QueryOption{}
 
@@ -139,20 +139,20 @@ func (s *PostService) handleRSS(lang *content.Language) http.HandlerFunc {
 		}
 		posts := s.GetPosts(opts...)
 
-		rss, err := buildRSS(langStr, s.cfg.SiteURL, posts)
+		feed, err := buildFeed(langStr, s.cfg.SiteURL, posts)
 		if err != nil {
-			slog.ErrorContext(r.Context(), "failed to build rss", "erro", err)
+			slog.ErrorContext(r.Context(), "failed to build feed", "erro", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
 
 		w.Header().Set("Content-Type", "application/rss+xml; charset=utf-8")
 		w.Header().Set("Cache-Control", "public, max-age=3600")
-		w.Write(rss)
+		w.Write(feed)
 	}
 }
 
-func buildRSS(lang string, siteURL string, posts []*content.Post) ([]byte, error) {
+func buildFeed(lang string, siteURL string, posts []*content.Post) ([]byte, error) {
 	ch := rss.Channel{
 		Title:       "Mohammad's blog",
 		Link:        siteURL,
