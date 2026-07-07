@@ -9,5 +9,5 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /reading", s.handleReadingPage)
 
 	refreshHandler := http.HandlerFunc(s.handleRefreshReading)
-	mux.Handle("POST /rss/refresh", auth.RequireAdmin(refreshHandler))
+	mux.Handle("GET /reading/refresh", auth.RequireAdmin(refreshHandler))
 }

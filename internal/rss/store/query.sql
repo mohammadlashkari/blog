@@ -6,8 +6,7 @@ SELECT EXISTS(
 -- name: GetItemsByStatus :many
 SELECT * FROM rss_items 
 WHERE status = ? 
-ORDER BY published_at DESC NULLS LAST 
-LIMIT ? OFFSET ?;
+ORDER BY published_at DESC NULLS LAST;
 
 -- name: CreateRssItem :exec
 INSERT INTO rss_items (

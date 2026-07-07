@@ -70,20 +70,13 @@ func (q *Queries) DeleteByFeedUR(ctx context.Context, feedUrl string) error {
 }
 
 const getItemsByStatus = `-- name: GetItemsByStatus :many
-SELECT id, feed_name, feed_url, guid, link, title, description, published_at, fetched_at, status, is_saved, seen_at, categories FROM rss_items 
+SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status, is_saved, seen_at FROM rss_items 
 WHERE status = ? 
-ORDER BY published_at DESC NULLS LAST 
-LIMIT ? OFFSET ?
+ORDER BY published_at DESC NULLS LAST
 `
 
-type GetItemsByStatusParams struct {
-	Status string `json:"status"`
-	Limit  int64  `json:"limit"`
-	Offset int64  `json:"offset"`
-}
-
-func (q *Queries) GetItemsByStatus(ctx context.Context, arg GetItemsByStatusParams) ([]RssItem, error) {
-	rows, err := q.db.QueryContext(ctx, getItemsByStatus, arg.Status, arg.Limit, arg.Offset)
+func (q *Queries) GetItemsByStatus(ctx context.Context, status string) ([]RssItem, error) {
+	rows, err := q.db.QueryContext(ctx, getItemsByStatus, status)
 	if err != nil {
 		return nil, err
 	}
@@ -99,12 +92,12 @@ func (q *Queries) GetItemsByStatus(ctx context.Context, arg GetItemsByStatusPara
 			&i.Link,
 			&i.Title,
 			&i.Description,
+			&i.Categories,
 			&i.PublishedAt,
 			&i.FetchedAt,
 			&i.Status,
 			&i.IsSaved,
 			&i.SeenAt,
-			&i.Categories,
 		); err != nil {
 			return nil, err
 		}

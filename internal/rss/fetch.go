@@ -89,15 +89,14 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 
 		var description *string
 		if item.Description != "" {
-			item.Description = html.UnescapeString(item.Description)
-			descCopy := item.Description
-			description = &descCopy
+			desc := cleanDescription(item.Description)
+			description = &desc
 		}
 
 		var pubDatePtr *time.Time
 		if item.PubDate != "" {
 			var (
-				formats    = []string{time.RFC1123, time.RFC1123Z, time.RFC822, time.RFC822Z}
+				formats    = []string{time.RFC1123, time.RFC1123Z, time.RFC3339, time.RFC822, time.RFC822Z}
 				parsedTime time.Time
 				parseErr   error
 			)

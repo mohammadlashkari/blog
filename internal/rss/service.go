@@ -103,5 +103,5 @@ func (s *Service) refresh(ctx context.Context, checkHash bool) error {
 }
 
 func (s *Service) feedsPath() string {
-	return filepath.Join(s.cfg.LocalContentPath, "reading", "feeds.md")
+	return filepath.Join(s.cfg.LocalContentPath, "reading", "feeds.yaml")
 }

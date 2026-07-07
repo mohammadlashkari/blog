@@ -124,7 +124,7 @@ func ReadingPage(items []store.RssItem) templ.Component {
 						return templ_7745c5c3_Err
 					}
 					if item.Description != nil && *item.Description != "" {
-						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<p class=\"mt-3 text-gray-600 line-clamp-3\">")
+						templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 10, "<p class=\"description-clamp\">")
 						if templ_7745c5c3_Err != nil {
 							return templ_7745c5c3_Err
 						}

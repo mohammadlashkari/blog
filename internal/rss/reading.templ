@@ -34,7 +34,7 @@ templ ReadingPage(items []store.RssItem) {
 										}
 									</div>
 									if item.Description != nil && *item.Description != "" {
-										<p class="mt-3 text-gray-600 line-clamp-3">
+										<p class="description-clamp">
 											{ *item.Description }
 										</p>
 									}
