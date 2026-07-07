@@ -8,6 +8,7 @@ import (
 	"html"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -113,6 +114,12 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 			}
 		}
 
+		var categories *string
+		if len(item.Categories) > 0 {
+			joined := strings.Join(item.Categories, ",")
+			categories = &joined
+		}
+
 		err = s.store.CreateRssItem(ctx, store.CreateRssItemParams{
 			Guid:        guid,
 			Link:        item.Link,
@@ -122,6 +129,7 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 			Description: description,
 			Status:      status,
 			PublishedAt: pubDatePtr,
+			Categories:  categories,
 		})
 		if err != nil {
 			slog.WarnContext(ctx, "failed to create rss item", "guid", guid, "error", err)

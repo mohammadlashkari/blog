@@ -11,9 +11,9 @@ LIMIT ? OFFSET ?;
 
 -- name: CreateRssItem :exec
 INSERT INTO rss_items (
-    feed_name, feed_url, guid, link, title, description, published_at, status
+    feed_name, feed_url, guid, link, title, description, published_at, status, categories
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(feed_url, guid) DO NOTHING;
 

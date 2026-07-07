@@ -64,7 +64,7 @@ func (s *Service) refresh(ctx context.Context, checkHash bool) error {
 	}
 	defer s.refreshing.Store(false)
 
-	path := filepath.Join(s.cfg.LocalContentPath, "reading", "feeds.md") // TODO
+	path := s.feedsPath()
 	data, err := os.ReadFile(path)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to read feeds file", "path", path, "error", err)
@@ -100,4 +100,8 @@ func (s *Service) refresh(ctx context.Context, checkHash bool) error {
 	}
 
 	return nil
+}
+
+func (s *Service) feedsPath() string {
+	return filepath.Join(s.cfg.LocalContentPath, "reading", "feeds.md")
 }

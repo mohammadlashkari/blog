@@ -21,4 +21,5 @@ type RssItem struct {
 	Status      string     `json:"status"`
 	IsSaved     bool       `json:"is_saved"`
 	SeenAt      *time.Time `json:"seen_at"`
+	Categories  *string    `json:"categories"`
 }

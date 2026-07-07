@@ -25,9 +25,9 @@ func (q *Queries) CheckFeedExists(ctx context.Context, feedUrl string) (bool, er
 
 const createRssItem = `-- name: CreateRssItem :exec
 INSERT INTO rss_items (
-    feed_name, feed_url, guid, link, title, description, published_at, status
+    feed_name, feed_url, guid, link, title, description, published_at, status, categories
 ) VALUES (
-    ?, ?, ?, ?, ?, ?, ?, ?
+    ?, ?, ?, ?, ?, ?, ?, ?, ?
 )
 ON CONFLICT(feed_url, guid) DO NOTHING
 `
@@ -41,6 +41,7 @@ type CreateRssItemParams struct {
 	Description *string    `json:"description"`
 	PublishedAt *time.Time `json:"published_at"`
 	Status      string     `json:"status"`
+	Categories  *string    `json:"categories"`
 }
 
 func (q *Queries) CreateRssItem(ctx context.Context, arg CreateRssItemParams) error {
@@ -53,6 +54,7 @@ func (q *Queries) CreateRssItem(ctx context.Context, arg CreateRssItemParams) er
 		arg.Description,
 		arg.PublishedAt,
 		arg.Status,
+		arg.Categories,
 	)
 	return err
 }
@@ -68,7 +70,7 @@ func (q *Queries) DeleteByFeedUR(ctx context.Context, feedUrl string) error {
 }
 
 const getItemsByStatus = `-- name: GetItemsByStatus :many
-SELECT id, feed_name, feed_url, guid, link, title, description, published_at, fetched_at, status, is_saved, seen_at FROM rss_items 
+SELECT id, feed_name, feed_url, guid, link, title, description, published_at, fetched_at, status, is_saved, seen_at, categories FROM rss_items 
 WHERE status = ? 
 ORDER BY published_at DESC NULLS LAST 
 LIMIT ? OFFSET ?
@@ -102,6 +104,7 @@ func (q *Queries) GetItemsByStatus(ctx context.Context, arg GetItemsByStatusPara
 			&i.Status,
 			&i.IsSaved,
 			&i.SeenAt,
+			&i.Categories,
 		); err != nil {
 			return nil, err
 		}

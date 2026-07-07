@@ -6,6 +6,7 @@ CREATE TABLE IF NOT EXISTS rss_items (
     link TEXT NOT NULL,
     title TEXT NOT NULL,
     description TEXT,
+    categories TEXT,
     published_at DATETIME,
     fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'archived')),
