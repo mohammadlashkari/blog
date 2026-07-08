@@ -113,11 +113,11 @@ func (c *Content) decodePost(path string) (*Post, error) {
 
 	dir := filepath.Dir(path)
 
-	md := newMDParser(dir)
 	mdCtx := parser.NewContext()
+	mdCtx.Set(postDirKey, dir)
 
 	var buf bytes.Buffer
-	if err := md.Convert(content, &buf, parser.WithContext(mdCtx)); err != nil {
+	if err := c.md.Convert(content, &buf, parser.WithContext(mdCtx)); err != nil {
 		slog.Error("failed to convert markdown to html", "error", err)
 		return nil, err
 	}

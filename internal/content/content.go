@@ -4,14 +4,18 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"strings"
 
 	img64 "github.com/tenkoh/goldmark-img64"
 	"github.com/yuin/goldmark"
 
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/frontmatter"
 	"go.abhg.dev/goldmark/mermaid"
 )
@@ -32,17 +36,58 @@ func New(localPath, remotePath, branch, contentFilename string) *Content {
 		branch:          branch,
 		postsPath:       filepath.Join(localPath, "posts"),
 		contentFilename: contentFilename,
+		md:              newMDParser(),
 	}
 }
 
-func newMDParser(path string) goldmark.Markdown {
+// postDirKey carries a post's on-disk directory through the parser context (set per
+// Convert) so absPathResolver can turn relative image paths into absolute filesystem
+// paths without any per-post state on the shared goldmark instance.
+var postDirKey = parser.NewContextKey()
+
+// absPathResolver rewrites relative image destinations to absolute filesystem paths at
+// parse time, using the post directory from the parser context. This moves the only
+// per-post state (which img64's ParentLocalPathResolver used to hold at construction)
+// into a per-Convert context, letting a single parser be shared across workers. img64's
+// renderer then reads the already-absolute path and base64-inlines the image.
+type absPathResolver struct{}
+
+func (absPathResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
+	dir, _ := pc.Get(postDirKey).(string)
+	if dir == "" {
+		return
+	}
+
+	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+		img, ok := n.(*ast.Image)
+		if !ok {
+			return ast.WalkContinue, nil
+		}
+		src := string(img.Destination)
+		if src != "" && !isRemote(src) && !strings.HasPrefix(src, "data:") && !filepath.IsAbs(src) {
+			img.Destination = []byte(filepath.Join(dir, src))
+		}
+		return ast.WalkSkipChildren, nil
+	})
+}
+
+func isRemote(src string) bool {
+	return strings.HasPrefix(src, "http://") ||
+		strings.HasPrefix(src, "https://") ||
+		strings.HasPrefix(src, "//")
+}
+
+func newMDParser() goldmark.Markdown {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
 			extension.Linkify,
 			extension.Footnote,
 			extension.Typographer,
-			img64.Img64,
+			img64.Img64, // default (identity) path resolver; paths resolved by absPathResolver
 			highlighting.Highlighting,
 			&mermaid.Extender{},
 			&frontmatter.Extender{},
@@ -50,12 +95,12 @@ func newMDParser(path string) goldmark.Markdown {
 		goldmark.WithParserOptions(
 			parser.WithAttribute(),
 			parser.WithAutoHeadingID(),
+			parser.WithASTTransformers(util.Prioritized(absPathResolver{}, 100)),
 		),
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
 			html.WithXHTML(),
 			html.WithUnsafe(),
-			img64.WithPathResolver(img64.ParentLocalPathResolver(path)),
 		),
 	)
 
