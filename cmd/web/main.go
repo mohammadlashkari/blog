@@ -9,11 +9,14 @@ import (
 	"blog/internal/rss"
 	"blog/internal/rss/store"
 	"context"
+	"expvar"
 	"log"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"runtime"
+	"time"
 
 	"blog/internal/ui"
 )
@@ -33,6 +36,16 @@ func main() {
 		log.Fatalln("failed to open db connection:", err)
 	}
 	defer db.Close()
+
+	expvar.Publish("goroutines", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("timestamp", expvar.Func(func() any {
+		return time.Now().Unix()
+	}))
 
 	rssSvc := rss.New(
 		cfg,
@@ -60,6 +73,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
+	mux.Handle("GET /debug/vars", expvar.Handler())
 	authSvc.RegisterRoutes(mux)
 	postSvc.RegisterRoutes(mux)
 	rssSvc.RegisterRoutes(mux)
