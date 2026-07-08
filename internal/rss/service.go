@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -83,14 +84,31 @@ func (s *Service) update(ctx context.Context, checkHash bool) error {
 		return nil
 	}
 
-	var errs []error
+	const maxWorkers = 10
+	var (
+		wg   sync.WaitGroup
+		mu   sync.Mutex
+		errs []error
+		sem  = make(chan struct{}, maxWorkers)
+	)
+
 	for _, feed := range r.Feeds {
-		if err := s.fetchFeed(ctx, feed); err != nil {
-			slog.ErrorContext(ctx, "fetch feed failed", "feed", feed, "error", err)
-			errs = append(errs, fmt.Errorf("feed %s: %w", feed, err))
-			continue
-		}
+		wg.Add(1)
+		sem <- struct{}{}
+		go func() {
+			defer func() {
+				<-sem
+				wg.Done()
+			}()
+			if err := s.fetchFeed(ctx, feed); err != nil {
+				slog.ErrorContext(ctx, "fetch feed failed", "feed", feed, "error", err)
+				mu.Lock()
+				errs = append(errs, fmt.Errorf("feed %s: %w", feed, err))
+				mu.Unlock()
+			}
+		}()
 	}
+	wg.Wait()
 
 	s.lastHash = newHash
 	slog.InfoContext(ctx, "rss refresh process completed")

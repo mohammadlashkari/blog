@@ -4,14 +4,17 @@ import (
 	"context"
 	"log/slog"
 	"path/filepath"
+	"strings"
 
-	img64 "github.com/tenkoh/goldmark-img64"
 	"github.com/yuin/goldmark"
 
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
+	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 	"github.com/yuin/goldmark/renderer/html"
+	"github.com/yuin/goldmark/text"
+	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/frontmatter"
 	"go.abhg.dev/goldmark/mermaid"
 )
@@ -32,17 +35,65 @@ func New(localPath, remotePath, branch, contentFilename string) *Content {
 		branch:          branch,
 		postsPath:       filepath.Join(localPath, "posts"),
 		contentFilename: contentFilename,
+		md:              newMDParser(),
 	}
 }
 
-func newMDParser(path string) goldmark.Markdown {
+// mediaBaseKey carries the per-post media URL base (e.g. "/media/<dir>") through the
+// parser context so mediaResolver can rewrite relative asset paths.
+var mediaBaseKey = parser.NewContextKey()
+
+// mediaResolver rewrites relative image destinations to absolute /media URLs at parse
+// time. The base comes from the parser context (set per Convert).
+type mediaResolver struct{}
+
+func (mediaResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
+	base, _ := pc.Get(mediaBaseKey).(string)
+	if base == "" {
+		return
+	}
+
+	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+		if !entering {
+			return ast.WalkContinue, nil
+		}
+		img, ok := n.(*ast.Image)
+		if !ok {
+			return ast.WalkContinue, nil
+		}
+		if dst := rewriteAsset(string(img.Destination), base); dst != "" {
+			img.Destination = []byte(dst)
+		}
+		return ast.WalkSkipChildren, nil
+	})
+}
+
+// rewriteAsset maps a relative asset reference to an absolute base-prefixed URL. It
+// returns "" (meaning "leave unchanged") for empty, remote, data:, or already-absolute
+// sources.
+func rewriteAsset(src, base string) string {
+	if src == "" ||
+		strings.HasPrefix(src, "http://") ||
+		strings.HasPrefix(src, "https://") ||
+		strings.HasPrefix(src, "//") ||
+		strings.HasPrefix(src, "data:") ||
+		strings.HasPrefix(src, "/") {
+		return ""
+	}
+	return base + "/" + strings.TrimPrefix(src, "./")
+}
+
+func newMDParser() goldmark.Markdown {
 	md := goldmark.New(
 		goldmark.WithExtensions(
 			extension.GFM,
 			extension.Linkify,
 			extension.Footnote,
 			extension.Typographer,
-			img64.Img64,
+			extension.Table,
+			extension.Strikethrough,
+			extension.TaskList,
+			extension.DefinitionList,
 			highlighting.Highlighting,
 			&mermaid.Extender{},
 			&frontmatter.Extender{},
@@ -50,12 +101,14 @@ func newMDParser(path string) goldmark.Markdown {
 		goldmark.WithParserOptions(
 			parser.WithAttribute(),
 			parser.WithAutoHeadingID(),
+			parser.WithASTTransformers(
+				util.Prioritized(mediaResolver{}, 100),
+			),
 		),
 		goldmark.WithRendererOptions(
 			html.WithHardWraps(),
 			html.WithXHTML(),
 			html.WithUnsafe(),
-			img64.WithPathResolver(img64.ParentLocalPathResolver(path)),
 		),
 	)
 

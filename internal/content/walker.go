@@ -111,13 +111,17 @@ func (c *Content) decodePost(path string) (*Post, error) {
 		return nil, err
 	}
 
-	dir := filepath.Dir(path)
+	var (
+		dir       = filepath.Dir(path)
+		dirName   = filepath.Base(dir)
+		mediaBase = "/media/" + dirName
+	)
 
-	md := newMDParser(dir)
 	mdCtx := parser.NewContext()
+	mdCtx.Set(mediaBaseKey, mediaBase)
 
 	var buf bytes.Buffer
-	if err := md.Convert(content, &buf, parser.WithContext(mdCtx)); err != nil {
+	if err := c.md.Convert(content, &buf, parser.WithContext(mdCtx)); err != nil {
 		slog.Error("failed to convert markdown to html", "error", err)
 		return nil, err
 	}
@@ -125,6 +129,10 @@ func (c *Content) decodePost(path string) (*Post, error) {
 	var fm FrontMatter
 	if err := frontmatter.Get(mdCtx).Decode(&fm); err != nil {
 		return nil, err
+	}
+
+	if cover := rewriteAsset(fm.CoverImage, mediaBase); cover != "" {
+		fm.CoverImage = cover
 	}
 
 	post := &Post{
@@ -135,6 +143,12 @@ func (c *Content) decodePost(path string) (*Post, error) {
 
 	if err := ValidatePost(post); err != nil {
 		return nil, err
+	}
+
+	// The post's on-disk folder name must equal its slug so that /media/<dir> URLs and
+	// /post/<slug> pages stay in sync.
+	if dirName != fm.Slug {
+		return nil, fmt.Errorf("post directory %q must match slug %q", dirName, fm.Slug)
 	}
 
 	return post, nil

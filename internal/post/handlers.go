@@ -15,6 +15,8 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -57,6 +59,29 @@ func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
 	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
+}
+
+// handleMedia serves a post's static assets from <postsPath>/<dir>/assets/. Only files
+// under the assets/ subtree are exposed; index.md and any path-traversal attempt resolve
+// outside it and are rejected with 404.
+func (s *PostService) handleMedia(w http.ResponseWriter, r *http.Request) {
+	postDir := r.PathValue("dir")
+	reqPath := r.PathValue("path")
+
+	var (
+		postsPath = filepath.Join(s.cfg.LocalContentPath, "posts")
+		base      = filepath.Join(postsPath, postDir)
+		assetsDir = filepath.Join(base, "assets")
+		target    = filepath.Join(base, filepath.Clean("/"+reqPath))
+	)
+
+	if !strings.HasPrefix(target, assetsDir+string(os.PathSeparator)) {
+		http.NotFound(w, r)
+		return
+	}
+
+	w.Header().Set("Cache-Control", "public, max-age=3600")
+	http.ServeFile(w, r, target)
 }
 
 type GitHubPushPayload struct {
