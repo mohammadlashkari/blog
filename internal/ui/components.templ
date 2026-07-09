@@ -11,8 +11,16 @@ script initWasm() {
 }
 
 templ GameOfLifeEmbed() {
-	<canvas id="board" width="400" height="400"></canvas>
-	<button id="pauseButton">Pause</button>
+	<canvas
+		id="board"
+		width="400"
+		height="400"
+		class="my-6 block h-auto max-w-full rounded-md border border-line"
+	></canvas>
+	<button
+		id="pauseButton"
+		class="rounded-md border border-line px-3 py-1.5 text-[0.9rem] hover:border-accent hover:text-accent"
+	>Pause</button>
 	<script src="/static/wasm_exec.js"></script>
 	@initWasm()
 }

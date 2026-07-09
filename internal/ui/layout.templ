@@ -11,32 +11,29 @@ templ Layout(title string) {
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1"/>
-			<meta name="color-scheme" content="light dark"/>
-			<link rel="alternate" type="application/rss+xml" title="Mohammad's Blog" href="feed.xml"/>
+			<meta name="color-scheme" content="light"/>
+			<link rel="alternate" type="application/rss+xml" title="Mohammad's Blog" href="/feed.xml"/>
 			<link rel="alternate" type="application/rss+xml" title="Mohammad's Blog (EN)" href="/feed/en.xml"/>
 			<link rel="alternate" type="application/rss+xml" title="Mohammad's Blog (FA)" href="/feed/fa.xml"/>
-			<link rel="stylesheet" href="/static/css/pico.min.css"/>
-			<link rel="stylesheet" href="/static/css/blog.css"/>
+			<link rel="stylesheet" href="/static/css/app.css"/>
 			<title>{ title }</title>
 		</head>
-		<body>
-			<header class="container">
-				<nav>
-					<ul>
-						<li><strong><a href="/">Mohammad</a></strong></li>
-					</ul>
-					<ul>
-						<li><a href="/posts">Blog</a></li>
-						<li><a href="/about">About</a></li>
-					</ul>
+		<body class="flex min-h-screen flex-col bg-paper font-sans text-[1.0625rem] leading-[1.7] text-ink sm:text-lg">
+			<header class="mx-auto w-full max-w-4xl px-4 py-5 sm:px-5 sm:py-7">
+				<nav class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
+					<a href="/" class="font-[650] tracking-tight hover:text-accent">Mohammad</a>
+					<div class="flex gap-4 text-[0.95rem]">
+						<a href="/posts" class="hover:text-accent">Blog</a>
+						<a href="/about" class="hover:text-accent">About</a>
+					</div>
 				</nav>
 			</header>
-			<main>
+			<main class="flex-1">
 				{ children... }
 			</main>
-			<footer class="container">
-				<hr/>
-				<small>
+			<footer class="mx-auto w-full max-w-4xl px-4 pt-6 pb-7 sm:px-5 sm:pb-10">
+				<hr class="mb-5 border-line"/>
+				<small class="text-[0.85rem] text-muted">
 					© 2025–{ strconv.Itoa(time.Now().Year()) } Mohammad Lashkari
 				</small>
 			</footer>

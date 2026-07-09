@@ -11,16 +11,17 @@ templ PostsIndexPage(
 	tags []string,
 ) {
 	@ui.Layout("Blog") {
-		<header class="container index-wide">
-			<hgroup>
-				<h1>Blog</h1>
-				<p>Thoughts, notes, and experiments</p>
-			</hgroup>
-			<nav>
-				<ul>
+		<header class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+			<h1 class="mb-1 text-3xl">Blog</h1>
+			<p class="text-muted">Thoughts, notes, and experiments</p>
+			<nav class="mt-7 border-t border-line pt-4">
+				<ul class="flex flex-wrap gap-x-4 gap-y-1">
 					for _, tag := range tags {
 						<li>
-							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
+							<a
+								href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) }
+								class="text-[0.85rem] text-muted hover:text-accent"
+							>
 								{ "#" + tag }
 							</a>
 						</li>
@@ -28,23 +29,19 @@ templ PostsIndexPage(
 				</ul>
 			</nav>
 		</header>
-		<section class="container index-wide">
-			<div class="posts-grid">
+		<section class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+			<div class="mt-4 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
 				<!-- English -->
 				<section dir="ltr">
 					for _, group := range english {
-						<h3>
-							{ group.year }
-						</h3>
+						@yearHeading(group.year)
 						@PostList(group.posts)
 					}
 				</section>
 				<!-- Farsi -->
 				<section dir="rtl">
 					for _, group := range farsi {
-						<h3>
-							{ group.year }
-						</h3>
+						@yearHeading(group.year)
 						@PostList(group.posts)
 					}
 				</section>
@@ -53,14 +50,23 @@ templ PostsIndexPage(
 	}
 }
 
+templ yearHeading(year string) {
+	<h3 class="mt-8 mb-3 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase first:mt-0">
+		{ year }
+	</h3>
+}
+
 templ PostList(posts []uiPost) {
-	<ul>
+	<ul class="mb-6">
 		for _, post := range posts {
-			<li>
-				<a href={ templ.URL("/post/" + post.Slug) }>
+			<li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-1.5">
+				<a
+					href={ templ.URL("/post/" + post.Slug) }
+					class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+				>
 					{ post.Title }
 				</a>
-				<small class="post-date">
+				<small class="shrink-0 text-[0.8rem] whitespace-nowrap text-muted tabular-nums">
 					if post.IsFavorite {
 						<span>★</span>
 					}

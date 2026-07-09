@@ -45,7 +45,7 @@ func GameOfLifeEmbed() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<canvas id=\"board\" width=\"400\" height=\"400\"></canvas><button id=\"pauseButton\">Pause</button><script src=\"/static/wasm_exec.js\"></script>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<canvas id=\"board\" width=\"400\" height=\"400\" class=\"my-6 block h-auto max-w-full rounded-md border border-line\"></canvas><button id=\"pauseButton\" class=\"rounded-md border border-line px-3 py-1.5 text-[0.9rem] hover:border-accent hover:text-accent\">Pause</button><script src=\"/static/wasm_exec.js\"></script>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

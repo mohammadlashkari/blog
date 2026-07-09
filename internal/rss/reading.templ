@@ -7,70 +7,47 @@ import (
 
 templ ReadingPage(items []store.RssItem) {
 	@ui.Layout("Reading List") {
-		<div class="max-w-6xl mx-auto p-6">
-			<h1 class="text-3xl font-bold mb-8">Reading List</h1>
+		<section class="mx-auto w-full max-w-2xl px-4 sm:px-5">
+			<h1 class="mb-1 text-3xl">Reading List</h1>
+			<p class="mb-7 text-muted">Things worth reading, pulled from my feeds</p>
 			if len(items) == 0 {
-				<div class="text-center py-12 text-gray-500">
-					<p class="text-xl">No items in your reading list yet.</p>
-				</div>
+				<p class="border-t border-line pt-8 text-muted">Nothing here yet.</p>
 			} else {
-				<div class="space-y-6">
+				<ul class="border-t border-line">
 					for _, item := range items {
-						<div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
-							<div class="flex justify-between items-start gap-4">
-								<div class="flex-1 min-w-0">
-									<a
-										href={ item.Link }
-										target="_blank"
-										class="block text-xl font-semibold text-blue-600 hover:text-blue-800 line-clamp-2"
-									>
-										{ item.Title }
-									</a>
-									<div class="text-sm text-gray-500 mt-1">
-										{ item.FeedName }
-										if item.PublishedAt != nil {
-											<span class="mx-2">•</span>
-											{ item.PublishedAt.Format("Jan 02, 2006") }
-										}
-									</div>
-									if item.Description != nil && *item.Description != "" {
-										<p class="description-clamp">
-											{ *item.Description }
-										</p>
-									}
-									<div class="flex items-center gap-3 mt-4 text-sm">
-										if item.IsSaved {
-											<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">
-												Saved
-											</span>
-										}
-										if item.SeenAt != nil {
-											<span class="text-gray-400">✓ Seen</span>
-										}
-									</div>
-								</div>
-								<div class="flex flex-col items-end gap-2 text-xs text-gray-400 whitespace-nowrap">
-									<div>{ item.Status }</div>
-									if item.PublishedAt != nil {
-										<div class="text-right">
-											{ item.PublishedAt.Format("15:04") }
-										</div>
-									}
-								</div>
+						<li class="border-b border-line py-5">
+							<a
+								href={ templ.URL(item.Link) }
+								target="_blank"
+								rel="noopener noreferrer"
+								class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+							>
+								{ item.Title }
+							</a>
+							<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
+								<span>{ item.FeedName }</span>
+								if item.PublishedAt != nil {
+									<span aria-hidden="true">·</span>
+									<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
+								}
+								if item.IsSaved {
+									<span aria-hidden="true">·</span>
+									<span class="text-accent">saved</span>
+								}
+								if item.SeenAt != nil {
+									<span aria-hidden="true">·</span>
+									<span>seen</span>
+								}
 							</div>
-							<div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-								<a
-									href={ item.Link }
-									target="_blank"
-									class="text-blue-600 hover:text-blue-700 font-medium text-sm"
-								>
-									Read full article →
-								</a>
-							</div>
-						</div>
+							if item.Description != nil && *item.Description != "" {
+								<p class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
+									{ *item.Description }
+								</p>
+							}
+						</li>
 					}
-				</div>
+				</ul>
 			}
-		</div>
+		</section>
 	}
 }

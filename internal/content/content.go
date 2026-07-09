@@ -8,6 +8,7 @@ import (
 
 	"github.com/yuin/goldmark"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -94,7 +95,13 @@ func newMDParser() goldmark.Markdown {
 			extension.Strikethrough,
 			extension.TaskList,
 			extension.DefinitionList,
-			highlighting.Highlighting,
+			// Class-based output, not inline styles: the CSP sets
+			// style-src 'self', which strips style attributes. Token colors
+			// live in internal/ui/css/app.src.css (chroma "github" style).
+			highlighting.NewHighlighting(
+				highlighting.WithStyle("github"),
+				highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
+			),
 			&mermaid.Extender{},
 			&frontmatter.Extender{},
 		),

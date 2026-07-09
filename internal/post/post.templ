@@ -7,18 +7,25 @@ import (
 
 templ PostPage(post uiPost, tags []string, htmlContent string, component templ.Component) {
 	@ui.Layout(post.Title) {
-		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
-			<header class="post-header">
-				<div class="post-date">
+		<article
+			class="mx-auto w-full max-w-2xl px-4 sm:px-5"
+			dir={ dirOf(post.Language) }
+			lang={ langOf(post.Language) }
+		>
+			<header class="mb-7 sm:mb-10">
+				<div class="mb-3 text-[0.78rem] tracking-[0.06em] text-muted uppercase tabular-nums">
 					if post.IsFavorite {
 						<span>★</span>
 					}
 					{ post.displayDate }
 				</div>
-				<h1 class="post-title">{ post.Title }</h1>
-				<div>
+				<h1 class="mb-3 text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] leading-tight">{ post.Title }</h1>
+				<div class="flex flex-wrap gap-x-3 gap-y-1">
 					for _, tag := range tags {
-						<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
+						<a
+							href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) }
+							class="text-[0.85rem] text-muted hover:text-accent"
+						>
 							{ "#" + tag }
 						</a>
 					}
