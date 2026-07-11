@@ -60,6 +60,7 @@
 		color: var(--color-ink-strong);
 		font-weight: 650;
 		letter-spacing: -0.012em;
+		overflow-wrap: break-word;
 	}
 
 	/* visible keyboard focus for links, buttons, inputs */
@@ -80,6 +81,9 @@
 @layer components {
 	.post-content {
 		line-height: 1.7;
+		/* long URLs / words wrap instead of forcing horizontal scroll on
+		   narrow screens (justify makes unbroken tokens overflow otherwise) */
+		overflow-wrap: break-word;
 	}
 	.post-content > :first-child {
 		margin-top: 0;
@@ -172,6 +176,8 @@
 		background-color: var(--color-code-bg);
 		font-family: var(--font-mono);
 		font-size: 0.88em;
+		/* a long inline token must break rather than overflow the column */
+		overflow-wrap: anywhere;
 	}
 
 	.post-content pre {
