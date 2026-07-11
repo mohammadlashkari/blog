@@ -50,9 +50,6 @@ type mediaResolver struct{}
 
 func (mediaResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
 	base, _ := pc.Get(mediaBaseKey).(string)
-	if base == "" {
-		return
-	}
 
 	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
@@ -62,8 +59,13 @@ func (mediaResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.
 		if !ok {
 			return ast.WalkContinue, nil
 		}
-		if dst := rewriteAsset(string(img.Destination), base); dst != "" {
-			img.Destination = []byte(dst)
+		// Defer offscreen images so long, image-heavy posts load fast.
+		img.SetAttributeString("loading", []byte("lazy"))
+		img.SetAttributeString("decoding", []byte("async"))
+		if base != "" {
+			if dst := rewriteAsset(string(img.Destination), base); dst != "" {
+				img.Destination = []byte(dst)
+			}
 		}
 		return ast.WalkSkipChildren, nil
 	})

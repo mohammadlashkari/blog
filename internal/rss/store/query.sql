@@ -4,8 +4,13 @@ SELECT EXISTS(
 );
 
 -- name: GetItemsByStatus :many
-SELECT * FROM rss_items 
-WHERE status = ? 
+SELECT * FROM rss_items
+WHERE status = ?
+ORDER BY published_at DESC NULLS LAST;
+
+-- name: GetSavedItems :many
+SELECT * FROM rss_items
+WHERE is_saved = TRUE
 ORDER BY published_at DESC NULLS LAST;
 
 -- name: CreateRssItem :exec
@@ -23,7 +28,7 @@ WHERE id = ?;
 
 -- name: ToggleSavedStatus :exec
 UPDATE rss_items
-SET is_saved = ?
+SET is_saved = NOT is_saved
 WHERE id = ?;
 
 -- name: DeleteByFeedUR :exec

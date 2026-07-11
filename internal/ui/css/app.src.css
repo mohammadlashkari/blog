@@ -39,7 +39,7 @@
 	--color-paper: #fcfcfb;
 	--color-ink: #20201d;
 	--color-ink-strong: #16150f;
-	--color-muted: #76746e;
+	--color-muted: #67655f;
 	--color-line: #e9e8e3;
 	--color-accent: #4a55c7;
 	--color-accent-hover: #353fa3;
@@ -61,6 +61,13 @@
 		font-weight: 650;
 		letter-spacing: -0.012em;
 	}
+
+	/* visible keyboard focus for links, buttons, inputs */
+	:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
 }
 
 /* ============================================================
@@ -72,7 +79,7 @@
 
 @layer components {
 	.post-content {
-		line-height: 1.75;
+		line-height: 1.7;
 	}
 	.post-content > :first-child {
 		margin-top: 0;
@@ -93,6 +100,14 @@
 	.post-content ul,
 	.post-content ol {
 		margin-bottom: 1.4rem;
+	}
+
+	/* Justify prose so long lines fill the column edge-to-edge (EN + FA).
+	   hyphens:auto softens the gaps for Latin; harmless for Farsi. */
+	.post-content p,
+	.post-content li {
+		text-align: justify;
+		hyphens: auto;
 	}
 
 	/* preflight strips list markers; prose needs them back */

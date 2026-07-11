@@ -50,7 +50,7 @@ func PostsIndexPage(
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"mx-auto w-full max-w-4xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Blog</h1><p class=\"text-muted\">Thoughts, notes, and experiments</p><nav class=\"mt-7 border-t border-line pt-4\"><ul class=\"flex flex-wrap gap-x-4 gap-y-1\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"mx-auto w-full max-w-4xl px-4 sm:px-5\"><p class=\"text-lg text-muted\">Thoughts, notes, and experiments</p><nav class=\"mt-6 border-t border-line pt-4\"><ul class=\"flex flex-wrap gap-x-4 gap-y-1\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -62,7 +62,7 @@ func PostsIndexPage(
 				var templ_7745c5c3_Var3 templ.SafeURL
 				templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/posts?tag=" + url.QueryEscape(tag)))
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 22, Col: 62}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 21, Col: 62}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 				if templ_7745c5c3_Err != nil {
@@ -75,7 +75,7 @@ func PostsIndexPage(
 				var templ_7745c5c3_Var4 string
 				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs("#" + tag)
 				if templ_7745c5c3_Err != nil {
-					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 25, Col: 19}
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 24, Col: 19}
 				}
 				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 				if templ_7745c5c3_Err != nil {
@@ -128,7 +128,7 @@ func PostsIndexPage(
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = ui.Layout("Blog").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -164,7 +164,7 @@ func yearHeading(year string) templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(year)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 55, Col: 8}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 54, Col: 8}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
@@ -211,7 +211,7 @@ func PostList(posts []uiPost) templ.Component {
 			var templ_7745c5c3_Var8 templ.SafeURL
 			templ_7745c5c3_Var8, templ_7745c5c3_Err = templ.JoinURLErrs(templ.URL("/post/" + post.Slug))
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 64, Col: 43}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 63, Col: 43}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var8))
 			if templ_7745c5c3_Err != nil {
@@ -224,7 +224,7 @@ func PostList(posts []uiPost) templ.Component {
 			var templ_7745c5c3_Var9 string
 			templ_7745c5c3_Var9, templ_7745c5c3_Err = templ.JoinStringErrs(post.Title)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 67, Col: 17}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 66, Col: 17}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var9))
 			if templ_7745c5c3_Err != nil {
@@ -243,7 +243,7 @@ func PostList(posts []uiPost) templ.Component {
 			var templ_7745c5c3_Var10 string
 			templ_7745c5c3_Var10, templ_7745c5c3_Err = templ.JoinStringErrs(post.displayDate)
 			if templ_7745c5c3_Err != nil {
-				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 73, Col: 23}
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/post/posts_index.templ`, Line: 72, Col: 23}
 			}
 			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var10))
 			if templ_7745c5c3_Err != nil {

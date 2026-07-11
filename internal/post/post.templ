@@ -6,9 +6,9 @@ import (
 )
 
 templ PostPage(post uiPost, tags []string, htmlContent string, component templ.Component) {
-	@ui.Layout(post.Title) {
+	@ui.Layout(post.Title, post.Description, "") {
 		<article
-			class="mx-auto w-full max-w-2xl px-4 sm:px-5"
+			class="mx-auto w-full max-w-3xl px-4 sm:px-5"
 			dir={ dirOf(post.Language) }
 			lang={ langOf(post.Language) }
 		>
@@ -20,6 +20,9 @@ templ PostPage(post uiPost, tags []string, htmlContent string, component templ.C
 					{ post.displayDate }
 				</div>
 				<h1 class="mb-3 text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] leading-tight">{ post.Title }</h1>
+				if post.Description != "" {
+					<p class="mb-3 text-[1.05rem] text-muted">{ post.Description }</p>
+				}
 				<div class="flex flex-wrap gap-x-3 gap-y-1">
 					for _, tag := range tags {
 						<a

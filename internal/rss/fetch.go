@@ -67,15 +67,8 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 		return fmt.Errorf("decode rss feed %s: %w", follow.URL, err)
 	}
 
-	exist, err := s.store.CheckFeedExists(ctx, follow.URL)
-	if err != nil {
-		return fmt.Errorf("check feed exists: %w", err)
-	}
-
+	// New items land in the unread inbox; the owner triages them from /reading.
 	status := unread
-	if !exist {
-		status = archived
-	}
 
 	for _, item := range f.Channel.Items {
 		guid := item.GUID

@@ -70,8 +70,8 @@ func (q *Queries) DeleteByFeedUR(ctx context.Context, feedUrl string) error {
 }
 
 const getItemsByStatus = `-- name: GetItemsByStatus :many
-SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status, is_saved, seen_at FROM rss_items 
-WHERE status = ? 
+SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status, is_saved, seen_at FROM rss_items
+WHERE status = ?
 ORDER BY published_at DESC NULLS LAST
 `
 
@@ -112,19 +112,57 @@ func (q *Queries) GetItemsByStatus(ctx context.Context, status string) ([]RssIte
 	return items, nil
 }
 
+const getSavedItems = `-- name: GetSavedItems :many
+SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status, is_saved, seen_at FROM rss_items
+WHERE is_saved = TRUE
+ORDER BY published_at DESC NULLS LAST
+`
+
+func (q *Queries) GetSavedItems(ctx context.Context) ([]RssItem, error) {
+	rows, err := q.db.QueryContext(ctx, getSavedItems)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []RssItem
+	for rows.Next() {
+		var i RssItem
+		if err := rows.Scan(
+			&i.ID,
+			&i.FeedName,
+			&i.FeedUrl,
+			&i.Guid,
+			&i.Link,
+			&i.Title,
+			&i.Description,
+			&i.Categories,
+			&i.PublishedAt,
+			&i.FetchedAt,
+			&i.Status,
+			&i.IsSaved,
+			&i.SeenAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const toggleSavedStatus = `-- name: ToggleSavedStatus :exec
 UPDATE rss_items
-SET is_saved = ?
+SET is_saved = NOT is_saved
 WHERE id = ?
 `
 
-type ToggleSavedStatusParams struct {
-	IsSaved bool  `json:"is_saved"`
-	ID      int64 `json:"id"`
-}
-
-func (q *Queries) ToggleSavedStatus(ctx context.Context, arg ToggleSavedStatusParams) error {
-	_, err := q.db.ExecContext(ctx, toggleSavedStatus, arg.IsSaved, arg.ID)
+func (q *Queries) ToggleSavedStatus(ctx context.Context, id int64) error {
+	_, err := q.db.ExecContext(ctx, toggleSavedStatus, id)
 	return err
 }
 
