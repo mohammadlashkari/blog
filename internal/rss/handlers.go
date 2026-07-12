@@ -13,11 +13,7 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	isAdmin := auth.IsAdmin(ctx)
 
-	// Visitors only ever see the curated (saved) list.
-	activeStatus := "saved"
-	if isAdmin {
-		activeStatus = normalizeStatus(r.URL.Query().Get("status"))
-	}
+	activeStatus := normalizeStatus(r.URL.Query().Get("status"))
 
 	var (
 		items []store.RssItem

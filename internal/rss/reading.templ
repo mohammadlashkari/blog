@@ -7,15 +7,15 @@ import (
 )
 
 templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
-	@ui.Layout("Reading", "Things worth reading.", "reading") {
+	@ui.Layout("Reading", "Things i read", "reading") {
 		<section class="mx-auto w-full max-w-3xl px-4 sm:px-5">
 			<h1 class="mb-1 text-3xl">Reading</h1>
-			if isAdmin {
-				<p class="mb-6 text-muted">Your reading inbox — triage what you follow.</p>
-				@readingTabs(activeStatus)
-			} else {
-				<p class="mb-7 text-muted">Things worth reading.</p>
-			}
+			<p class="mb-2 text-muted">
+				A reading list built from the RSS feeds I follow.
+				Programming, interesting ideas, and other things I enjoy reading.
+			</p>
+			@feedsNote()
+			@readingTabs(activeStatus)
 			if len(items) == 0 {
 				<p class="border-t border-line pt-8 text-muted">Nothing here yet.</p>
 			} else {
@@ -70,6 +70,18 @@ templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
 			}
 		</section>
 	}
+}
+
+templ feedsNote() {
+	<p class="mb-7 text-[0.9rem] text-muted">
+		The full list of feeds I follow lives in
+		<a
+			href="https://github.com/mohammadlashkari/blog-content/blob/master/reading/feeds.yaml"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-accent hover:text-accent-hover hover:underline"
+		>feeds.yaml</a>.
+	</p>
 }
 
 templ readingTabs(active string) {
