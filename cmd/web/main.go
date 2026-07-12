@@ -84,6 +84,7 @@ func main() {
 		logger,
 		isAdmin(authSvc),
 		rateLimit(cfg),
+		secureHeaders,
 	)
 
 	srv := http.Server{

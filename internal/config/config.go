@@ -35,7 +35,7 @@ func Dev() (*Config, error) {
 		Port:              "2026",
 		DBPath:            "blog.db",
 		SiteURL:           "myblog",
-		LocalContentPath:  "/home/lsk/blog-content",
+		LocalContentPath:  "/home/mohammad/blog-content",
 		RemoteContentPath: "https://github.com/mohammadlashkari/blog-content.git",
 		LimiterEnable:     false,
 		WebhookSecret:     "secret",

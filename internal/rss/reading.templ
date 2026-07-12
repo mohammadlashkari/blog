@@ -16,58 +16,48 @@ templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
 			</p>
 			@feedsNote()
 			@readingTabs(activeStatus)
-			if len(items) == 0 {
-				<p class="border-t border-line pt-8 text-muted">Nothing here yet.</p>
-			} else {
-				<ul class="border-t border-line">
-					for _, item := range items {
-						<li class="border-b border-line py-5">
-							<a
-								href={ templ.URL(item.Link) }
-								target="_blank"
-								rel="noopener noreferrer"
-								class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
-							>
-								{ item.Title }
-							</a>
-							<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
-								<span>{ item.FeedName }</span>
-								if item.PublishedAt != nil {
-									<span aria-hidden="true">·</span>
-									<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
+			<ul class="border-t border-line">
+				for _, item := range items {
+					<li class="border-b border-line py-5">
+						<a
+							href={ templ.URL(item.Link) }
+							target="_blank"
+							rel="noopener noreferrer"
+							class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+						>
+							{ item.Title }
+						</a>
+						<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
+							<span>{ item.FeedName }</span>
+							if item.PublishedAt != nil {
+								<span aria-hidden="true">·</span>
+								<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
+							}
+						</div>
+						if item.Description != nil && *item.Description != "" {
+							<p class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
+								{ *item.Description }
+							</p>
+						}
+						if isAdmin {
+							<div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]">
+								if item.Status != unread {
+									@statusForm(item.ID, unread, "unread", activeStatus)
 								}
-								if item.IsSaved {
-									<span aria-hidden="true">·</span>
-									<span class="text-accent">saved</span>
+								if item.Status != read {
+									@statusForm(item.ID, read, "read", activeStatus)
+								}
+								if item.Status != archived {
+									@statusForm(item.ID, archived, "archive", activeStatus)
+								}
+								if item.Status != saved {
+									@statusForm(item.ID, saved, "save", activeStatus)
 								}
 							</div>
-							if item.Description != nil && *item.Description != "" {
-								<p class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
-									{ *item.Description }
-								</p>
-							}
-							if isAdmin {
-								<div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]">
-									if item.Status != unread {
-										@statusForm(item.ID, unread, "unread", activeStatus)
-									}
-									if item.Status != read {
-										@statusForm(item.ID, read, "read", activeStatus)
-									}
-									if item.Status != archived {
-										@statusForm(item.ID, archived, "archive", activeStatus)
-									}
-									if item.IsSaved {
-										@saveForm(item.ID, "unsave", activeStatus)
-									} else {
-										@saveForm(item.ID, "save", activeStatus)
-									}
-								</div>
-							}
-						</li>
-					}
-				</ul>
-			}
+						}
+					</li>
+				}
+			</ul>
 		</section>
 	}
 }
@@ -89,7 +79,7 @@ templ readingTabs(active string) {
 		@tabLink(unread, "Unread", active)
 		@tabLink(read, "Read", active)
 		@tabLink(archived, "Archived", active)
-		@tabLink("saved", "Saved", active)
+		@tabLink(saved, "Saved", active)
 	</nav>
 }
 
@@ -105,13 +95,6 @@ templ tabLink(status, label, active string) {
 templ statusForm(id int64, status, label, tab string) {
 	<form method="post" action={ templ.URL("/reading/" + strconv.FormatInt(id, 10) + "/status") } class="inline">
 		<input type="hidden" name="status" value={ status }/>
-		<input type="hidden" name="tab" value={ tab }/>
-		<button type="submit" class="text-muted hover:text-accent">{ label }</button>
-	</form>
-}
-
-templ saveForm(id int64, label, tab string) {
-	<form method="post" action={ templ.URL("/reading/" + strconv.FormatInt(id, 10) + "/save") } class="inline">
 		<input type="hidden" name="tab" value={ tab }/>
 		<button type="submit" class="text-muted hover:text-accent">{ label }</button>
 	</form>

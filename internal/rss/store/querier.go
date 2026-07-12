@@ -13,8 +13,6 @@ type Querier interface {
 	CreateRssItem(ctx context.Context, arg CreateRssItemParams) error
 	DeleteByFeedUR(ctx context.Context, feedUrl string) error
 	GetItemsByStatus(ctx context.Context, status string) ([]RssItem, error)
-	GetSavedItems(ctx context.Context) ([]RssItem, error)
-	ToggleSavedStatus(ctx context.Context, id int64) error
 	UpdateItemStatus(ctx context.Context, arg UpdateItemStatusParams) error
 }
 

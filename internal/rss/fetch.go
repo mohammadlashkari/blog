@@ -16,6 +16,7 @@ const (
 	unread   = "unread"
 	read     = "read"
 	archived = "archived"
+	saved    = "saved"
 )
 
 type Feed struct {
@@ -67,8 +68,18 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 		return fmt.Errorf("decode rss feed %s: %w", follow.URL, err)
 	}
 
-	// New items land in the unread inbox; the owner triages them from /reading.
-	status := unread
+	exists, err := s.store.CheckFeedExists(ctx, follow.URL)
+	if err != nil {
+		return fmt.Errorf("failed to check whether feed %q exists: %w", follow.URL, err)
+	}
+
+	var status string
+	if exists {
+		// New items land in the unread inbox
+		status = unread
+	} else {
+		status = archived
+	}
 
 	for _, item := range f.Channel.Items {
 		guid := item.GUID

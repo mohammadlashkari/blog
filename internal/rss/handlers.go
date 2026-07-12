@@ -15,15 +15,7 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 
 	activeStatus := normalizeStatus(r.URL.Query().Get("status"))
 
-	var (
-		items []store.RssItem
-		err   error
-	)
-	if activeStatus == "saved" {
-		items, err = s.store.GetSavedItems(ctx)
-	} else {
-		items, err = s.store.GetItemsByStatus(ctx, activeStatus)
-	}
+	items, err := s.store.GetItemsByStatus(ctx, activeStatus)
 	if err != nil {
 		slog.ErrorContext(ctx, "failed to get rss items", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
@@ -31,16 +23,6 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ui.Render(w, r, ReadingPage(items, isAdmin, activeStatus))
-}
-
-// normalizeStatus clamps a status query param to a known tab, defaulting to unread.
-func normalizeStatus(s string) string {
-	switch s {
-	case read, archived, "saved":
-		return s
-	default:
-		return unread
-	}
 }
 
 func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
@@ -53,7 +35,7 @@ func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	status := r.FormValue("status")
-	if status != unread && status != read && status != archived {
+	if !isStatusValid(status) {
 		http.Error(w, "invalid status", http.StatusBadRequest)
 		return
 	}
@@ -64,29 +46,6 @@ func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirectToTab(w, r)
-}
-
-func (s *Service) handleToggleSaved(w http.ResponseWriter, r *http.Request) {
-	ctx := r.Context()
-
-	id, err := strconv.ParseInt(r.PathValue("id"), 10, 64)
-	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-
-	if err := s.store.ToggleSavedStatus(ctx, id); err != nil {
-		slog.ErrorContext(ctx, "failed to toggle saved", "error", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		return
-	}
-
-	redirectToTab(w, r)
-}
-
-// redirectToTab sends the owner back to the reading tab they acted from.
-func redirectToTab(w http.ResponseWriter, r *http.Request) {
 	tab := normalizeStatus(r.FormValue("tab"))
 	http.Redirect(w, r, "/reading?status="+tab, http.StatusSeeOther)
 }
@@ -97,5 +56,5 @@ func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.WriteHeader(http.StatusOK)
+	http.Redirect(w, r, "/reading", http.StatusSeeOther)
 }

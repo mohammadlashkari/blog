@@ -14,7 +14,7 @@ templ PostsIndexPage(
 	@ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "") {
 		<header class="mx-auto w-full max-w-4xl px-4 sm:px-5">
 			<img
-				src={ ui.Asset("/static/img/cover.jpg") }
+				src="/static/img/cover.jpg"
 				alt=""
 				width="1080"
 				height="360"
@@ -37,32 +37,22 @@ templ PostsIndexPage(
 			}
 		</header>
 		<section class="mx-auto w-full max-w-4xl px-4 sm:px-5">
-			if len(english) == 0 && len(farsi) == 0 {
-				<p class="mt-8 text-muted">
-					if activeTag != "" {
-						{ "No posts tagged #" + activeTag + "." }
-					} else {
-						Nothing here yet.
+			<div class="mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
+				<!-- English -->
+				<section dir="ltr">
+					for _, group := range english {
+						@yearHeading(group.year)
+						@PostList(group.posts)
 					}
-				</p>
-			} else {
-				<div class="mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
-					<!-- English -->
-					<section dir="ltr">
-						for _, group := range english {
-							@yearHeading(group.year)
-							@PostList(group.posts)
-						}
-					</section>
-					<!-- Farsi -->
-					<section dir="rtl">
-						for _, group := range farsi {
-							@yearHeading(group.year)
-							@PostList(group.posts)
-						}
-					</section>
-				</div>
-			}
+				</section>
+				<!-- Farsi -->
+				<section dir="rtl">
+					for _, group := range farsi {
+						@yearHeading(group.year)
+						@PostList(group.posts)
+					}
+				</section>
+			</div>
 		</section>
 	}
 }
