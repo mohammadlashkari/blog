@@ -24,19 +24,20 @@ import (
 func (s *PostService) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
-	tags := r.URL.Query()["tag"]
-	if len(tags) == 0 {
-		tags = s.GetTags()
+	activeTag := r.URL.Query().Get("tag")
+
+	opts := []QueryOption{
+		withIncludeUnpublished(auth.IsAdmin(ctx)),
+	}
+	if activeTag != "" {
+		opts = append(opts, withTags(activeTag))
 	}
 
-	posts := s.GetPosts(
-		withIncludeUnpublished(auth.IsAdmin(ctx)),
-		withTags(tags...),
-	)
+	posts := s.GetPosts(opts...)
 
 	en, fa := groupByYearAndLang(posts)
 
-	ui.Render(w, r, PostsIndexPage(en, fa, tags))
+	ui.Render(w, r, PostsIndexPage(en, fa, s.GetTags(), activeTag))
 }
 
 func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
