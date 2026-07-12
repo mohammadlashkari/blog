@@ -2,7 +2,7 @@
 
 TAILWIND_VERSION := v4.3.2
 TAILWIND := ./bin/tailwindcss
-CSS_IN := ./internal/ui/css/app.src.css
+CSS_IN := ./internal/ui/styles/tailwind.css
 CSS_OUT := ./internal/ui/static/css/app.css
 
 wasm_exec.js:

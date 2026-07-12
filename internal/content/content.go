@@ -99,7 +99,7 @@ func newMDParser() goldmark.Markdown {
 			extension.DefinitionList,
 			// Class-based output, not inline styles: the CSP sets
 			// style-src 'self', which strips style attributes. Token colors
-			// live in internal/ui/css/app.src.css (chroma "github" style).
+			// live in internal/ui/styles/tailwind.css (chroma "github" style).
 			highlighting.NewHighlighting(
 				highlighting.WithStyle("github"),
 				highlighting.WithFormatOptions(chromahtml.WithClasses(true)),

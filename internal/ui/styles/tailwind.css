@@ -1,5 +1,5 @@
 /*
- * Tailwind input. Compiled to internal/ui/static/css/app.css by `make css`.
+ * Tailwind entrypoint. Compiled to internal/ui/static/css/app.css by `make css`.
  * This file is never served: it lives outside static/ so //go:embed skips it.
  */
 
