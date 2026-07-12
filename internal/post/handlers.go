@@ -58,7 +58,7 @@ func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
-	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
+	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds["game-of-life"]))
 }
 
 // handleMedia serves a post's static assets from <postsPath>/<dir>/assets/. Only files
