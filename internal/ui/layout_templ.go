@@ -70,7 +70,7 @@ func Layout(title, description, active string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</title></head><body class=\"flex min-h-screen flex-col bg-paper font-sans text-base leading-[1.7] text-ink sm:text-[1.0625rem]\"><header class=\"mx-auto w-full max-w-4xl px-4 pt-5 pb-4 sm:px-5 sm:pt-6 sm:pb-5\"><nav class=\"flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1\"><a href=\"/\" class=\"font-[650] tracking-tight hover:text-accent\">Mohammad</a><div class=\"flex gap-4 text-[0.95rem]\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "</title></head><body class=\"flex min-h-screen flex-col bg-paper font-sans text-base leading-[1.7] text-ink sm:text-[1.0625rem]\"><header class=\"mx-auto w-full max-w-4xl px-4 pt-5 pb-4 sm:px-5 sm:pt-6 sm:pb-5\"><nav class=\"flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1\"><a href=\"/\" class=\"font-[650] tracking-tight hover:text-accent\">Mohammad Lashkari</a><div class=\"flex gap-4 text-[0.95rem]\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

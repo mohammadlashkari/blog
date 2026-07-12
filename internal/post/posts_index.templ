@@ -12,8 +12,15 @@ templ PostsIndexPage(
 ) {
 	@ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "") {
 		<header class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+			<img
+				src="/static/img/cover.jpg"
+				alt=""
+				width="1080"
+				height="360"
+				class="mb-6 aspect-[3/1] w-full rounded-md border border-line object-cover"
+			/>
 			<p class="text-lg text-muted">Thoughts, notes, and experiments</p>
-			<nav class="mt-6 border-t border-line pt-4">
+			<nav class="mt-6 border-y border-line py-3">
 				<ul class="flex flex-wrap gap-x-4 gap-y-1">
 					for _, tag := range tags {
 						<li>
@@ -29,7 +36,7 @@ templ PostsIndexPage(
 			</nav>
 		</header>
 		<section class="mx-auto w-full max-w-4xl px-4 sm:px-5">
-			<div class="mt-4 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
+			<div class="mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
 				<!-- English -->
 				<section dir="ltr">
 					for _, group := range english {
