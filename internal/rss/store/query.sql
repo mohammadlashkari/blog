@@ -4,8 +4,8 @@ SELECT EXISTS(
 );
 
 -- name: GetItemsByStatus :many
-SELECT * FROM rss_items 
-WHERE status = ? 
+SELECT * FROM rss_items
+WHERE status = ?
 ORDER BY published_at DESC NULLS LAST;
 
 -- name: CreateRssItem :exec
@@ -18,12 +18,7 @@ ON CONFLICT(feed_url, guid) DO NOTHING;
 
 -- name: UpdateItemStatus :exec
 UPDATE rss_items
-SET status = ?, seen_at = CURRENT_TIMESTAMP
-WHERE id = ?;
-
--- name: ToggleSavedStatus :exec
-UPDATE rss_items
-SET is_saved = ?
+SET status = ? 
 WHERE id = ?;
 
 -- name: DeleteByFeedUR :exec

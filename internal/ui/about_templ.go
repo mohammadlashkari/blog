@@ -41,13 +41,13 @@ func AboutPage() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"container post\"><h1>About</h1><div class=\"about-image\"><img src=\"/static/img/avatar.jpg\" alt=\"Mohammad\" loading=\"lazy\"></div><br><p>Hi, I'm Mohammad Lashkari — a software engineer. I write here about things I build, notes to my future self, and the occasional experiment.</p><div class=\"about-links\"><a href=\"mailto:moe.lashkari@gmail.com\">Gmail</a> <a href=\"https://github.com/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\">GitHub</a> <a href=\"https://www.linkedin.com/in/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\">LinkedIn</a> <a href=\"/static/resume.pdf\" download class=\"button\">Resume</a></div></article>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"mx-auto w-full max-w-3xl px-4 sm:px-5\"><h1 class=\"mb-7 text-3xl\">About</h1><img src=\"/static/img/avatar.jpg\" alt=\"Mohammad\" loading=\"lazy\" width=\"160\" height=\"160\" class=\"mb-7 size-40 rounded-full object-cover\"><p class=\"mb-7\">Hi, I'm Mohammad Lashkari — a software engineer. I write here about things I build, notes to my future self, and the occasional experiment.</p><div class=\"flex flex-wrap gap-4 text-[0.95rem]\"><a href=\"mailto:moe.lashkari@gmail.com\" class=\"text-accent hover:text-accent-hover hover:underline\">Gmail</a> <a href=\"https://github.com/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-accent hover:text-accent-hover hover:underline\">GitHub</a> <a href=\"https://www.linkedin.com/in/mohammadlashkari\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-accent hover:text-accent-hover hover:underline\">LinkedIn</a> <a href=\"/static/resume.pdf\" download class=\"text-accent hover:text-accent-hover hover:underline\">Resume</a></div></article>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = Layout("About").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = Layout("About", "Mohammad Lashkari — software engineer. Notes on things I build and the occasional experiment.", "about").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

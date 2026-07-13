@@ -4,6 +4,7 @@ package main
 
 import (
 	"log"
+	"math"
 	"syscall/js"
 )
 
@@ -27,17 +28,16 @@ type game struct {
 	canvasCtx   js.Value
 	pauseButton js.Value
 	board       [ROWS][COLS]bool
-	cellSize    int
+	cellSize    float64
 	tickMs      float64
 	paused      bool
 }
 
-func newGame(canvas, canvasCtx, pauseButton js.Value, cellSize int) *game {
+func newGame(canvas, canvasCtx, pauseButton js.Value) *game {
 	return &game{
 		canvas:      canvas,
 		canvasCtx:   canvasCtx,
 		pauseButton: pauseButton,
-		cellSize:    cellSize,
 		tickMs:      200,
 		paused:      false,
 	}
@@ -85,28 +85,30 @@ func (g *game) drawBoard() {
 
 	for i := range ROWS {
 		for j := range COLS {
+			x, y := float64(j)*cs, float64(i)*cs
 			if g.board[i][j] {
 				g.canvasCtx.Set("fillStyle", "#000000")
-				g.canvasCtx.Call("fillRect", j*cs, i*cs, cs, cs)
 			} else {
 				g.canvasCtx.Set("fillStyle", "#ffffff")
-				g.canvasCtx.Call("fillRect", j*cs, i*cs, cs, cs)
 			}
+			g.canvasCtx.Call("fillRect", x, y, cs, cs)
 		}
 	}
 
 	// Grid lines
 	g.canvasCtx.Set("strokeStyle", "#cccccc")
 	for i := range ROWS {
+		y := float64(i) * cs
 		g.canvasCtx.Call("beginPath")
-		g.canvasCtx.Call("moveTo", 0, i*cs)
-		g.canvasCtx.Call("lineTo", COLS*cs, i*cs)
+		g.canvasCtx.Call("moveTo", 0, y)
+		g.canvasCtx.Call("lineTo", COLS*cs, y)
 		g.canvasCtx.Call("stroke")
 	}
 	for j := range COLS {
+		x := float64(j) * cs
 		g.canvasCtx.Call("beginPath")
-		g.canvasCtx.Call("moveTo", j*cs, 0)
-		g.canvasCtx.Call("lineTo", j*cs, ROWS*cs)
+		g.canvasCtx.Call("moveTo", x, 0)
+		g.canvasCtx.Call("lineTo", x, ROWS*cs)
 		g.canvasCtx.Call("stroke")
 	}
 }
@@ -114,11 +116,11 @@ func (g *game) drawBoard() {
 func (g *game) registerHandlers() {
 	g.canvas.Call("addEventListener", "click", js.FuncOf(
 		func(this js.Value, args []js.Value) any {
-			x := args[0].Get("offsetX").Int()
-			y := args[0].Get("offsetY").Int()
-			row := y / g.cellSize
-			col := x / g.cellSize
-			if row < ROWS && col < COLS {
+			x := args[0].Get("offsetX").Float()
+			y := args[0].Get("offsetY").Float()
+			row := int(y / g.cellSize)
+			col := int(x / g.cellSize)
+			if row >= 0 && row < ROWS && col >= 0 && col < COLS {
 				g.board[row][col] = !g.board[row][col]
 			}
 			return nil
@@ -136,6 +138,22 @@ func (g *game) registerHandlers() {
 			return nil
 		},
 	))
+
+	js.Global().Call("addEventListener", "resize", js.FuncOf(
+		func(this js.Value, args []js.Value) any {
+			g.resize()
+			g.drawBoard()
+			return nil
+		},
+	))
+}
+
+func (g *game) resize() {
+	width := g.canvas.Get("clientWidth").Int()
+	width = max(width, COLS)
+	g.cellSize = float64(width) / COLS
+	g.canvas.Set("width", width)
+	g.canvas.Set("height", int(math.Round(g.cellSize*ROWS)))
 }
 
 func (g *game) drawGlider() {
@@ -166,9 +184,8 @@ func main() {
 		log.Fatalln("unable to get pause button element")
 	}
 
-	cellSize := canvas.Get("width").Int() / COLS
-
-	g := newGame(canvas, canvasCtx, pauseButton, cellSize)
+	g := newGame(canvas, canvasCtx, pauseButton)
+	g.resize()
 	g.drawGlider()
 	g.registerHandlers()
 

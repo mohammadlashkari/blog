@@ -9,42 +9,46 @@ templ PostsIndexPage(
 	english []yearGroup,
 	farsi []yearGroup,
 	tags []string,
+	activeTag string,
 ) {
-	@ui.Layout("Blog") {
-		<header class="container index-wide">
-			<hgroup>
-				<h1>Blog</h1>
-				<p>Thoughts, notes, and experiments</p>
-			</hgroup>
-			<nav>
-				<ul>
-					for _, tag := range tags {
+	@ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "") {
+		<header class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+			<img
+				src="/static/img/cover.jpg"
+				alt=""
+				width="1080"
+				height="360"
+				class="mb-6 aspect-[3/1] w-full rounded-md border border-line object-cover"
+			/>
+			<p class="text-lg text-muted">Thoughts, notes, and experiments</p>
+			if len(tags) > 0 {
+				<nav aria-label="Filter posts by tag" class="mt-6 border-y border-line py-3">
+					<ul class="flex flex-wrap gap-x-4 gap-y-1">
 						<li>
-							<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
-								{ "#" + tag }
-							</a>
+							@tagLink("/posts", "All", activeTag == "")
 						</li>
-					}
-				</ul>
-			</nav>
+						for _, tag := range tags {
+							<li>
+								@tagLink("/posts?tag="+url.QueryEscape(tag), "#"+tag, tag == activeTag)
+							</li>
+						}
+					</ul>
+				</nav>
+			}
 		</header>
-		<section class="container index-wide">
-			<div class="posts-grid">
+		<section class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+			<div class="mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]">
 				<!-- English -->
 				<section dir="ltr">
 					for _, group := range english {
-						<h3>
-							{ group.year }
-						</h3>
+						@yearHeading(group.year)
 						@PostList(group.posts)
 					}
 				</section>
 				<!-- Farsi -->
 				<section dir="rtl">
 					for _, group := range farsi {
-						<h3>
-							{ group.year }
-						</h3>
+						@yearHeading(group.year)
 						@PostList(group.posts)
 					}
 				</section>
@@ -53,14 +57,37 @@ templ PostsIndexPage(
 	}
 }
 
+templ tagLink(href, label string, isActive bool) {
+	<a
+		href={ templ.URL(href) }
+		if isActive {
+			aria-current="true"
+		}
+		class={ "text-[0.85rem] hover:text-accent",
+			templ.KV("text-accent", isActive),
+			templ.KV("text-muted", !isActive) }
+	>
+		{ label }
+	</a>
+}
+
+templ yearHeading(year string) {
+	<h3 class="mt-8 mb-3 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase first:mt-0">
+		{ year }
+	</h3>
+}
+
 templ PostList(posts []uiPost) {
-	<ul>
+	<ul class="mb-6">
 		for _, post := range posts {
-			<li>
-				<a href={ templ.URL("/post/" + post.Slug) }>
+			<li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-0.5 py-1.5">
+				<a
+					href={ templ.URL("/post/" + post.Slug) }
+					class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+				>
 					{ post.Title }
 				</a>
-				<small class="post-date">
+				<small class="shrink-0 text-[0.8rem] whitespace-nowrap text-muted tabular-nums">
 					if post.IsFavorite {
 						<span>★</span>
 					}

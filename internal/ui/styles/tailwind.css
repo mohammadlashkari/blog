@@ -1,0 +1,320 @@
+/*
+ * Tailwind entrypoint. Compiled to internal/ui/static/css/app.css by `make css`.
+ * This file is never served: it lives outside static/ so //go:embed skips it.
+ */
+
+@import "tailwindcss";
+@source "../../**/*.templ";
+
+/* ============================================================
+   Fonts
+   ============================================================ */
+
+/* Vazirmatn — bundled locally, used for Farsi (RTL) text */
+@font-face {
+	font-family: "Vazirmatn";
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url("/static/fonts/Vazirmatn-Regular.woff2") format("woff2");
+}
+@font-face {
+	font-family: "Vazirmatn";
+	font-style: normal;
+	font-weight: 700;
+	font-display: swap;
+	src: url("/static/fonts/Vazirmatn-Bold.woff2") format("woff2");
+}
+
+/* ============================================================
+   Design tokens
+   ============================================================ */
+
+@theme {
+	--font-sans: system-ui, -apple-system, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, sans-serif;
+	--font-fa: "Vazirmatn", Tahoma, sans-serif;
+
+	/* warm near-neutral paper, single indigo accent */
+	--color-paper: #fcfcfb;
+	--color-ink: #20201d;
+	--color-ink-strong: #16150f;
+	--color-muted: #67655f;
+	--color-line: #e9e8e3;
+	--color-accent: #4a55c7;
+	--color-accent-hover: #353fa3;
+	--color-code-bg: #f3f2ee;
+}
+
+/* ============================================================
+   Base
+   ============================================================ */
+
+@layer base {
+	[lang="fa"],
+	[dir="rtl"] {
+		font-family: var(--font-fa);
+	}
+
+	h1, h2, h3, h4, h5, h6 {
+		color: var(--color-ink-strong);
+		font-weight: 650;
+		letter-spacing: -0.012em;
+		overflow-wrap: break-word;
+	}
+
+	/* visible keyboard focus for links, buttons, inputs */
+	:focus-visible {
+		outline: 2px solid var(--color-accent);
+		outline-offset: 2px;
+		border-radius: 2px;
+	}
+}
+
+/* ============================================================
+   Post prose
+
+   The post body is raw goldmark HTML injected via templ.Raw, so its
+   elements can't carry utility classes. Style them by descent instead.
+   ============================================================ */
+
+@layer components {
+	.post-content {
+		line-height: 1.7;
+		/* long URLs / words wrap instead of forcing horizontal scroll on
+		   narrow screens (justify makes unbroken tokens overflow otherwise) */
+		overflow-wrap: break-word;
+	}
+	.post-content > :first-child {
+		margin-top: 0;
+	}
+
+	.post-content h2 {
+		margin-top: 2.5rem;
+		margin-bottom: 1rem;
+		font-size: 1.5rem;
+	}
+	.post-content h3 {
+		margin-top: 2rem;
+		margin-bottom: 0.75rem;
+		font-size: 1.2rem;
+	}
+
+	.post-content p,
+	.post-content ul,
+	.post-content ol {
+		margin-bottom: 1.4rem;
+	}
+
+	/* Justify prose so long lines fill the column edge-to-edge (EN + FA).
+	   hyphens:auto softens the gaps for Latin; harmless for Farsi. */
+	.post-content p,
+	.post-content li {
+		text-align: justify;
+		hyphens: auto;
+	}
+
+	/* preflight strips list markers; prose needs them back */
+	.post-content ul,
+	.post-content ol {
+		padding-inline-start: 1.5rem;
+	}
+	.post-content ul {
+		list-style: disc;
+	}
+	.post-content ol {
+		list-style: decimal;
+	}
+	.post-content li {
+		margin-bottom: 0.4rem;
+	}
+	.post-content li::marker {
+		color: var(--color-muted);
+	}
+	/* task lists render their own checkbox */
+	.post-content li:has(> input[type="checkbox"]) {
+		list-style: none;
+	}
+
+	.post-content a {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-decoration-color: color-mix(in srgb, var(--color-accent) 40%, transparent);
+		text-underline-offset: 0.15em;
+	}
+	.post-content a:hover {
+		color: var(--color-accent-hover);
+		text-decoration-color: currentColor;
+	}
+
+	.post-content strong {
+		font-weight: 650;
+	}
+
+	.post-content img {
+		display: block;
+		max-width: 100%;
+		height: auto;
+		margin: 2rem auto;
+		border-radius: 6px;
+	}
+
+	.post-content blockquote {
+		margin: 1.75rem 0;
+		padding: 0.25rem 0 0.25rem 1.25rem;
+		border-inline-start: 3px solid var(--color-accent);
+		color: var(--color-muted);
+		font-style: italic;
+	}
+	.post-content blockquote p:last-child {
+		margin-bottom: 0;
+	}
+
+	.post-content :not(pre) > code {
+		padding: 0.1rem 0.35rem;
+		border-radius: 4px;
+		background-color: var(--color-code-bg);
+		font-family: var(--font-mono);
+		font-size: 0.88em;
+		/* a long inline token must break rather than overflow the column */
+		overflow-wrap: anywhere;
+	}
+
+	.post-content pre {
+		margin: 1.75rem 0;
+		padding: 1rem 1.1rem;
+		border-radius: 6px;
+		background-color: var(--color-code-bg);
+		font-size: 0.85rem;
+		line-height: 1.6;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+	/* code blocks stay LTR inside Farsi posts */
+	.post-content pre {
+		direction: ltr;
+		text-align: left;
+	}
+
+	/* wide tables scroll instead of blowing out the viewport */
+	.post-content table {
+		display: block;
+		width: 100%;
+		margin-bottom: 1.4rem;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		border-collapse: collapse;
+	}
+	.post-content th,
+	.post-content td {
+		padding: 0.5rem 0.75rem;
+		border: 1px solid var(--color-line);
+		text-align: start;
+	}
+	.post-content th {
+		font-weight: 650;
+	}
+
+	.post-content hr {
+		margin: 2.5rem 0;
+		border: 0;
+		border-top: 1px solid var(--color-line);
+	}
+
+	/* goldmark footnotes */
+	.post-content .footnotes {
+		margin-top: 3rem;
+		padding-top: 1.5rem;
+		border-top: 1px solid var(--color-line);
+		color: var(--color-muted);
+		font-size: 0.9rem;
+	}
+}
+
+/* ============================================================
+   Syntax highlighting
+
+   Chroma "github" style, class-based. Inline styles are blocked by the
+   CSP (style-src 'self'), so content.go sets chromahtml.WithClasses(true)
+   and the colors have to come from here. Regenerate with:
+     chroma --html-styles --style=github
+   Backgrounds are overridden to match the paper palette.
+   ============================================================ */
+
+@layer components {
+	.post-content pre.chroma {
+		background-color: var(--color-code-bg);
+	}
+	.chroma .err { color: #a61717; background-color: #e3d2d2 }
+	.chroma .lntd { vertical-align: top; padding: 0; margin: 0; border: 0; }
+	.chroma .lntable { border-spacing: 0; padding: 0; margin: 0; border: 0; }
+	.chroma .hl { background-color: #e5e5e5 }
+	.chroma .lnt { white-space: pre; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; color: #7f7f7f }
+	.chroma .ln { white-space: pre; user-select: none; margin-right: 0.4em; padding: 0 0.4em 0 0.4em; color: #7f7f7f }
+	.chroma .line { display: flex; }
+	.chroma .k { color: #000000; font-weight: bold }
+	.chroma .kc { color: #000000; font-weight: bold }
+	.chroma .kd { color: #000000; font-weight: bold }
+	.chroma .kn { color: #000000; font-weight: bold }
+	.chroma .kp { color: #000000; font-weight: bold }
+	.chroma .kr { color: #000000; font-weight: bold }
+	.chroma .kt { color: #445588; font-weight: bold }
+	.chroma .na { color: #008080 }
+	.chroma .nb { color: #0086b3 }
+	.chroma .bp { color: #999999 }
+	.chroma .nc { color: #445588; font-weight: bold }
+	.chroma .no { color: #008080 }
+	.chroma .nd { color: #3c5d5d; font-weight: bold }
+	.chroma .ni { color: #800080 }
+	.chroma .ne { color: #990000; font-weight: bold }
+	.chroma .nf { color: #990000; font-weight: bold }
+	.chroma .nl { color: #990000; font-weight: bold }
+	.chroma .nn { color: #555555 }
+	.chroma .nt { color: #000080 }
+	.chroma .nv { color: #008080 }
+	.chroma .vc { color: #008080 }
+	.chroma .vg { color: #008080 }
+	.chroma .vi { color: #008080 }
+	.chroma .s { color: #dd1144 }
+	.chroma .sa { color: #dd1144 }
+	.chroma .sb { color: #dd1144 }
+	.chroma .sc { color: #dd1144 }
+	.chroma .dl { color: #dd1144 }
+	.chroma .sd { color: #dd1144 }
+	.chroma .s2 { color: #dd1144 }
+	.chroma .se { color: #dd1144 }
+	.chroma .sh { color: #dd1144 }
+	.chroma .si { color: #dd1144 }
+	.chroma .sx { color: #dd1144 }
+	.chroma .sr { color: #009926 }
+	.chroma .s1 { color: #dd1144 }
+	.chroma .ss { color: #990073 }
+	.chroma .m { color: #009999 }
+	.chroma .mb { color: #009999 }
+	.chroma .mf { color: #009999 }
+	.chroma .mh { color: #009999 }
+	.chroma .mi { color: #009999 }
+	.chroma .il { color: #009999 }
+	.chroma .mo { color: #009999 }
+	.chroma .o { color: #000000; font-weight: bold }
+	.chroma .ow { color: #000000; font-weight: bold }
+	.chroma .c { color: #999988; font-style: italic }
+	.chroma .ch { color: #999988; font-style: italic }
+	.chroma .cm { color: #999988; font-style: italic }
+	.chroma .c1 { color: #999988; font-style: italic }
+	.chroma .cs { color: #999999; font-weight: bold; font-style: italic }
+	.chroma .cp { color: #999999; font-weight: bold; font-style: italic }
+	.chroma .cpf { color: #999999; font-weight: bold; font-style: italic }
+	.chroma .gd { color: #000000; background-color: #ffdddd }
+	.chroma .ge { color: #000000; font-style: italic }
+	.chroma .gr { color: #aa0000 }
+	.chroma .gh { color: #999999 }
+	.chroma .gi { color: #000000; background-color: #ddffdd }
+	.chroma .go { color: #888888 }
+	.chroma .gp { color: #555555 }
+	.chroma .gs { font-weight: bold }
+	.chroma .gu { color: #aaaaaa }
+	.chroma .gt { color: #aa0000 }
+	.chroma .gl { text-decoration: underline }
+	.chroma .w { color: #bbbbbb }
+}

@@ -70,8 +70,8 @@ func (q *Queries) DeleteByFeedUR(ctx context.Context, feedUrl string) error {
 }
 
 const getItemsByStatus = `-- name: GetItemsByStatus :many
-SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status, is_saved, seen_at FROM rss_items 
-WHERE status = ? 
+SELECT id, feed_name, feed_url, guid, link, title, description, categories, published_at, fetched_at, status FROM rss_items
+WHERE status = ?
 ORDER BY published_at DESC NULLS LAST
 `
 
@@ -96,8 +96,6 @@ func (q *Queries) GetItemsByStatus(ctx context.Context, status string) ([]RssIte
 			&i.PublishedAt,
 			&i.FetchedAt,
 			&i.Status,
-			&i.IsSaved,
-			&i.SeenAt,
 		); err != nil {
 			return nil, err
 		}
@@ -112,25 +110,9 @@ func (q *Queries) GetItemsByStatus(ctx context.Context, status string) ([]RssIte
 	return items, nil
 }
 
-const toggleSavedStatus = `-- name: ToggleSavedStatus :exec
-UPDATE rss_items
-SET is_saved = ?
-WHERE id = ?
-`
-
-type ToggleSavedStatusParams struct {
-	IsSaved bool  `json:"is_saved"`
-	ID      int64 `json:"id"`
-}
-
-func (q *Queries) ToggleSavedStatus(ctx context.Context, arg ToggleSavedStatusParams) error {
-	_, err := q.db.ExecContext(ctx, toggleSavedStatus, arg.IsSaved, arg.ID)
-	return err
-}
-
 const updateItemStatus = `-- name: UpdateItemStatus :exec
 UPDATE rss_items
-SET status = ?, seen_at = CURRENT_TIMESTAMP
+SET status = ? 
 WHERE id = ?
 `
 

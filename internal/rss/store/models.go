@@ -20,6 +20,4 @@ type RssItem struct {
 	PublishedAt *time.Time `json:"published_at"`
 	FetchedAt   time.Time  `json:"fetched_at"`
 	Status      string     `json:"status"`
-	IsSaved     bool       `json:"is_saved"`
-	SeenAt      *time.Time `json:"seen_at"`
 }

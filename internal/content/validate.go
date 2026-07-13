@@ -10,6 +10,10 @@ import (
 
 var slugRegex = regexp.MustCompile(`^[a-z0-9]+(?:-[a-z0-9]+)*$`)
 
+func IsValidSlug(s string) bool {
+	return slugRegex.MatchString(s)
+}
+
 // ValidatePost validates a post's front matter against the blog's validation rules.
 func ValidatePost(p *Post) error {
 	if p == nil {
@@ -20,7 +24,7 @@ func ValidatePost(p *Post) error {
 	if strings.TrimSpace(p.Title) == "" {
 		errs = append(errs, errors.New("title is required"))
 	}
-	if !slugRegex.MatchString(p.Slug) {
+	if !IsValidSlug(p.Slug) {
 		errs = append(errs, fmt.Errorf("slug %q must be lowercase kebab-case matching %s", p.Slug, slugRegex))
 	}
 	switch p.Language {

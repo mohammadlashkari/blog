@@ -8,6 +8,7 @@ import (
 
 	"github.com/yuin/goldmark"
 
+	chromahtml "github.com/alecthomas/chroma/v2/formatters/html"
 	highlighting "github.com/yuin/goldmark-highlighting/v2"
 	"github.com/yuin/goldmark/ast"
 	"github.com/yuin/goldmark/extension"
@@ -49,9 +50,6 @@ type mediaResolver struct{}
 
 func (mediaResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.Context) {
 	base, _ := pc.Get(mediaBaseKey).(string)
-	if base == "" {
-		return
-	}
 
 	_ = ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
@@ -61,8 +59,13 @@ func (mediaResolver) Transform(doc *ast.Document, reader text.Reader, pc parser.
 		if !ok {
 			return ast.WalkContinue, nil
 		}
-		if dst := rewriteAsset(string(img.Destination), base); dst != "" {
-			img.Destination = []byte(dst)
+		// Defer offscreen images so long, image-heavy posts load fast.
+		img.SetAttributeString("loading", []byte("lazy"))
+		img.SetAttributeString("decoding", []byte("async"))
+		if base != "" {
+			if dst := rewriteAsset(string(img.Destination), base); dst != "" {
+				img.Destination = []byte(dst)
+			}
 		}
 		return ast.WalkSkipChildren, nil
 	})
@@ -94,7 +97,13 @@ func newMDParser() goldmark.Markdown {
 			extension.Strikethrough,
 			extension.TaskList,
 			extension.DefinitionList,
-			highlighting.Highlighting,
+			// Class-based output, not inline styles: the CSP sets
+			// style-src 'self', which strips style attributes. Token colors
+			// live in internal/ui/styles/tailwind.css (chroma "github" style).
+			highlighting.NewHighlighting(
+				highlighting.WithStyle("github"),
+				highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
+			),
 			&mermaid.Extender{},
 			&frontmatter.Extender{},
 		),

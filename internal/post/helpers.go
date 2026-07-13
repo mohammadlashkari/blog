@@ -23,9 +23,10 @@ func groupByYearAndLang(posts []*content.Post) (en, fa []yearGroup) {
 	var enPosts, faPosts []*content.Post
 
 	for _, p := range posts {
-		if p.Language == content.LanguageEn {
+		switch p.Language {
+		case content.LanguageEn:
 			enPosts = append(enPosts, p)
-		} else if p.Language == content.LanguageFa {
+		case content.LanguageFa:
 			faPosts = append(faPosts, p)
 		}
 	}

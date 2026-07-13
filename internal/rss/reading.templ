@@ -3,74 +3,99 @@ package rss
 import (
 	"blog/internal/rss/store"
 	"blog/internal/ui"
+	"strconv"
 )
 
-templ ReadingPage(items []store.RssItem) {
-	@ui.Layout("Reading List") {
-		<div class="max-w-6xl mx-auto p-6">
-			<h1 class="text-3xl font-bold mb-8">Reading List</h1>
-			if len(items) == 0 {
-				<div class="text-center py-12 text-gray-500">
-					<p class="text-xl">No items in your reading list yet.</p>
-				</div>
-			} else {
-				<div class="space-y-6">
-					for _, item := range items {
-						<div class="bg-white border border-gray-200 rounded-xl shadow-sm hover:shadow-md transition-shadow p-6">
-							<div class="flex justify-between items-start gap-4">
-								<div class="flex-1 min-w-0">
-									<a
-										href={ item.Link }
-										target="_blank"
-										class="block text-xl font-semibold text-blue-600 hover:text-blue-800 line-clamp-2"
-									>
-										{ item.Title }
-									</a>
-									<div class="text-sm text-gray-500 mt-1">
-										{ item.FeedName }
-										if item.PublishedAt != nil {
-											<span class="mx-2">•</span>
-											{ item.PublishedAt.Format("Jan 02, 2006") }
-										}
-									</div>
-									if item.Description != nil && *item.Description != "" {
-										<p class="description-clamp">
-											{ *item.Description }
-										</p>
-									}
-									<div class="flex items-center gap-3 mt-4 text-sm">
-										if item.IsSaved {
-											<span class="inline-flex items-center px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 text-xs font-medium">
-												Saved
-											</span>
-										}
-										if item.SeenAt != nil {
-											<span class="text-gray-400">✓ Seen</span>
-										}
-									</div>
-								</div>
-								<div class="flex flex-col items-end gap-2 text-xs text-gray-400 whitespace-nowrap">
-									<div>{ item.Status }</div>
-									if item.PublishedAt != nil {
-										<div class="text-right">
-											{ item.PublishedAt.Format("15:04") }
-										</div>
-									}
-								</div>
-							</div>
-							<div class="mt-4 pt-4 border-t border-gray-100 flex gap-3">
-								<a
-									href={ item.Link }
-									target="_blank"
-									class="text-blue-600 hover:text-blue-700 font-medium text-sm"
-								>
-									Read full article →
-								</a>
-							</div>
+templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
+	@ui.Layout("Reading", "Things i read", "reading") {
+		<section class="mx-auto w-full max-w-3xl px-4 sm:px-5">
+			<h1 class="mb-1 text-3xl">Reading</h1>
+			<p class="mb-2 text-muted">
+				A reading list built from the RSS feeds I follow.
+				Programming, interesting ideas, and other things I enjoy reading.
+			</p>
+			@feedsNote()
+			@readingTabs(activeStatus)
+			<ul class="border-t border-line">
+				for _, item := range items {
+					<li class="border-b border-line py-5">
+						<a
+							href={ templ.URL(item.Link) }
+							target="_blank"
+							rel="noopener noreferrer"
+							class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+						>
+							{ item.Title }
+						</a>
+						<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
+							<span>{ item.FeedName }</span>
+							if item.PublishedAt != nil {
+								<span aria-hidden="true">·</span>
+								<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
+							}
 						</div>
-					}
-				</div>
-			}
-		</div>
+						if item.Description != nil && *item.Description != "" {
+							<p class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
+								{ *item.Description }
+							</p>
+						}
+						if isAdmin {
+							<div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]">
+								if item.Status != unread {
+									@statusForm(item.ID, unread, "unread", activeStatus)
+								}
+								if item.Status != read {
+									@statusForm(item.ID, read, "read", activeStatus)
+								}
+								if item.Status != archived {
+									@statusForm(item.ID, archived, "archive", activeStatus)
+								}
+								if item.Status != saved {
+									@statusForm(item.ID, saved, "save", activeStatus)
+								}
+							</div>
+						}
+					</li>
+				}
+			</ul>
+		</section>
 	}
+}
+
+templ feedsNote() {
+	<p class="mb-7 text-[0.9rem] text-muted">
+		The full list of feeds I follow lives in
+		<a
+			href="https://github.com/mohammadlashkari/blog-content/blob/master/reading/feeds.yaml"
+			target="_blank"
+			rel="noopener noreferrer"
+			class="text-accent hover:text-accent-hover hover:underline"
+		>feeds.yaml</a>.
+	</p>
+}
+
+templ readingTabs(active string) {
+	<nav class="mb-6 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-4 text-[0.85rem]">
+		@tabLink(unread, "Unread", active)
+		@tabLink(read, "Read", active)
+		@tabLink(archived, "Archived", active)
+		@tabLink(saved, "Saved", active)
+	</nav>
+}
+
+templ tabLink(status, label, active string) {
+	<a
+		href={ templ.URL("/reading?status=" + status) }
+		class={ "hover:text-accent", templ.KV("text-accent", active == status), templ.KV("text-muted", active != status) }
+	>
+		{ label }
+	</a>
+}
+
+templ statusForm(id int64, status, label, tab string) {
+	<form method="post" action={ templ.URL("/reading/" + strconv.FormatInt(id, 10) + "/status") } class="inline">
+		<input type="hidden" name="status" value={ status }/>
+		<input type="hidden" name="tab" value={ tab }/>
+		<button type="submit" class="text-muted hover:text-accent">{ label }</button>
+	</form>
 }

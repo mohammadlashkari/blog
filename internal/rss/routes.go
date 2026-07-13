@@ -10,4 +10,6 @@ func (s *Service) RegisterRoutes(mux *http.ServeMux) {
 
 	refreshHandler := http.HandlerFunc(s.handleRefreshReading)
 	mux.Handle("GET /reading/refresh", auth.RequireAdmin(refreshHandler))
+
+	mux.Handle("POST /reading/{id}/status", auth.RequireAdmin(http.HandlerFunc(s.handleSetStatus)))
 }

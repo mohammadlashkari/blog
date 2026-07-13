@@ -3,6 +3,7 @@ package main
 import (
 	"blog/internal/auth"
 	"blog/internal/config"
+	"crypto/rand"
 	"log/slog"
 	"net"
 	"net/http"
@@ -10,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/a-h/templ"
 	"golang.org/x/time/rate"
 )
 
@@ -128,18 +130,28 @@ func isAdmin(authSvc *auth.AuthService) func(http.Handler) http.Handler {
 	}
 }
 
-// TODO: check these
 func secureHeaders(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set(
-			"Content-Security-Policy",
-			"default-src 'self'; style-src 'self' fonts.googleapis.com; font-src fonts.gstatic.com",
+		// The nonce covers templ script templates, which read it from the
+		// context. WebAssembly.instantiateStreaming needs 'wasm-unsafe-eval'.
+		nonce := rand.Text()
+
+		w.Header().Set("Content-Security-Policy",
+			"default-src 'self'; "+
+				"script-src 'self' 'wasm-unsafe-eval' 'nonce-"+nonce+"'; "+
+				"style-src 'self'; "+
+				"font-src 'self'; "+
+				"img-src 'self'; "+
+				"object-src 'none'; "+
+				"base-uri 'none'; "+
+				"form-action 'self'; "+
+				"frame-ancestors 'none'",
 		)
 		w.Header().Set("Referrer-Policy", "origin-when-cross-origin")
 		w.Header().Set("X-Content-Type-Options", "nosniff")
 		w.Header().Set("X-Frame-Options", "deny")
 		w.Header().Set("X-XSS-Protection", "0")
 
-		next.ServeHTTP(w, r)
+		next.ServeHTTP(w, r.WithContext(templ.WithNonce(r.Context(), nonce)))
 	})
 }

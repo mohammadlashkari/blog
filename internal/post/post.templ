@@ -6,23 +6,35 @@ import (
 )
 
 templ PostPage(post uiPost, tags []string, htmlContent string, component templ.Component) {
-	@ui.Layout(post.Title) {
-		<article class="container post" dir={ dirOf(post.Language) } lang={ langOf(post.Language) }>
-			<header class="post-header">
-				<div class="post-date">
+	@ui.Layout(post.Title, post.Description, "") {
+		<article
+			class="mx-auto w-full max-w-3xl px-4 sm:px-5"
+			dir={ dirOf(post.Language) }
+			lang={ langOf(post.Language) }
+		>
+			<header class="mb-7 border-b border-line pb-5 sm:mb-10 sm:pb-6">
+				<div class="mb-2 text-[0.78rem] tracking-[0.06em] text-muted uppercase tabular-nums">
 					if post.IsFavorite {
 						<span>★</span>
 					}
 					{ post.displayDate }
 				</div>
-				<h1 class="post-title">{ post.Title }</h1>
-				<div>
-					for _, tag := range tags {
-						<a href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) } class="tag">
-							{ "#" + tag }
-						</a>
-					}
-				</div>
+				<h1 class="text-[clamp(1.9rem,1.4rem+2vw,2.6rem)] leading-tight text-balance">{ post.Title }</h1>
+				if post.Description != "" {
+					<p class="mt-3 text-[1.05rem] leading-snug text-muted text-pretty">{ post.Description }</p>
+				}
+				if len(tags) > 0 {
+					<div class="mt-5 flex flex-wrap gap-x-4 gap-y-1">
+						for _, tag := range tags {
+							<a
+								href={ templ.URL("/posts?tag=" + url.QueryEscape(tag)) }
+								class="text-[0.85rem] text-muted hover:text-accent"
+							>
+								{ "#" + tag }
+							</a>
+						}
+					</div>
+				}
 			</header>
 			<div class="post-content">
 				@templ.Raw(htmlContent)

@@ -9,31 +9,42 @@ import (
 	"blog/internal/rss"
 	"blog/internal/rss/store"
 	"context"
+	"errors"
 	"expvar"
-	"log"
+	"fmt"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"runtime"
+	"syscall"
 	"time"
 
 	"blog/internal/ui"
 )
 
 func main() {
-	ctx := context.Background()
+	if err := run(); err != nil {
+		slog.Error("server terminated", "error", err)
+		os.Exit(1)
+	}
+}
+
+func run() error {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
 
 	cfg, err := config.Dev()
 	if err != nil {
-		log.Fatalln("failed to load config:", err)
+		return fmt.Errorf("failed to load config: %w", err)
 	}
 
 	setupLogger(cfg.Env)
 
 	db, err := db.Open(ctx, cfg.DBPath)
 	if err != nil {
-		log.Fatalln("failed to open db connection:", err)
+		return fmt.Errorf("failed to open db connection: %w", err)
 	}
 	defer db.Close()
 
@@ -61,7 +72,7 @@ func main() {
 
 	postSvc, err := post.New(ctx, cfg, cont, rssSvc)
 	if err != nil {
-		log.Fatalln("failed to boot post service:", err)
+		return fmt.Errorf("failed to boot post service: %w", err)
 	}
 
 	authSvc := auth.New(ctx, cfg)
@@ -73,7 +84,7 @@ func main() {
 	})
 	mux.HandleFunc("GET /about", handleAbout)
 	mux.HandleFunc("GET /health", handleHealth)
-	mux.Handle("GET /debug/vars", expvar.Handler())
+	mux.Handle("GET /debug/vars", auth.RequireAdmin(expvar.Handler()))
 	authSvc.RegisterRoutes(mux)
 	postSvc.RegisterRoutes(mux)
 	rssSvc.RegisterRoutes(mux)
@@ -82,19 +93,46 @@ func main() {
 		mux,
 		recoverPanic,
 		logger,
-		isAdmin(authSvc),
+		secureHeaders,
 		rateLimit(cfg),
+		isAdmin(authSvc),
 	)
 
-	srv := http.Server{
-		Addr:    net.JoinHostPort("0.0.0.0", cfg.Port),
-		Handler: handler,
+	srv := &http.Server{
+		Addr:              net.JoinHostPort("0.0.0.0", cfg.Port),
+		Handler:           handler,
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
 	}
 
-	slog.InfoContext(ctx, "starting blog server on", "address", srv.Addr, "pid", os.Getpid())
-	if err := srv.ListenAndServe(); err != nil {
-		log.Fatalln("listen and serve:", err)
+	srvErr := make(chan error, 1)
+	go func() {
+		slog.InfoContext(ctx, "starting blog server on", "address", srv.Addr, "pid", os.Getpid())
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			srvErr <- err
+		}
+	}()
+
+	select {
+	case err := <-srvErr:
+		return fmt.Errorf("listen and serve: %w", err)
+	case <-ctx.Done():
+		stop()
 	}
+
+	slog.Info("shutting down, draining in-flight requests")
+
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("graceful shutdown: %w", err)
+	}
+
+	slog.Info("server stopped")
+	return nil
 }
 
 func setupLogger(env string) {

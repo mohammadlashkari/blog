@@ -9,9 +9,7 @@ CREATE TABLE IF NOT EXISTS rss_items (
     categories TEXT,
     published_at DATETIME,
     fetched_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'archived')),
-    is_saved BOOLEAN NOT NULL DEFAULT FALSE,
-    seen_at DATETIME,
+    status TEXT NOT NULL DEFAULT 'unread' CHECK (status IN ('unread', 'read', 'archived', 'saved')),
 
     UNIQUE(feed_url, guid)
 );
