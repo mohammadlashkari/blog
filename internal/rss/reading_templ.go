@@ -47,7 +47,7 @@ func ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) templ
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-3xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Reading</h1><p class=\"mb-2 text-muted\">A reading list built from the RSS feeds I follow. Programming, interesting ideas, and other things I enjoy reading.</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-3xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Reading</h1><br><p class=\"mb-2 text-muted\">A reading list from the RSS feeds I follow</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -223,7 +223,7 @@ func feedsNote() templ.Component {
 			templ_7745c5c3_Var8 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<p class=\"mb-7 text-[0.9rem] text-muted\">The full list of feeds I follow lives in <a href=\"https://github.com/mohammadlashkari/blog-content/blob/master/reading/feeds.yaml\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-accent hover:text-accent-hover hover:underline\">feeds.yaml</a>.</p>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 16, "<p class=\"mb-7 text-[0.9rem] text-muted\">See my <a href=\"https://github.com/mohammadlashkari/blog-content/blob/master/reading/feeds.yaml\" target=\"_blank\" rel=\"noopener noreferrer\" class=\"text-accent hover:text-accent-hover hover:underline\">feeds.yaml</a>.</p>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

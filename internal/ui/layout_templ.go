@@ -90,14 +90,14 @@ func Layout(title, description, active string) templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</main><footer class=\"mx-auto w-full max-w-4xl px-4 pt-6 pb-7 sm:px-5 sm:pb-10\"><hr class=\"mb-5 border-line\"><div class=\"flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-[0.85rem] text-muted\"><small>© 2025–")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</main><footer class=\"mx-auto w-full max-w-4xl px-4 pt-6 pb-7 sm:px-5 sm:pb-10\"><hr class=\"mb-5 border-line\"><div class=\"flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 text-[0.85rem] text-muted\"><small>© ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(strconv.Itoa(time.Now().Year()))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/layout.templ`, Line: 41, Col: 55}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/ui/layout.templ`, Line: 41, Col: 48}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

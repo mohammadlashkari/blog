@@ -1,16 +1,2 @@
-- Add resume download
-- Add Vazir font
-- Farsi dates
-- Tag filter
-- Farsi number
-- Validation
-- Pagination
-- Admin only endpoints
-- RSS
-- Rebuild if changed
-
-Shutdown handle
-Post Assets
-Improve config read + Refresh config on sig
+Pagination
 Search
-UI :(
