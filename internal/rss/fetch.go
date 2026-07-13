@@ -6,6 +6,7 @@ import (
 	"encoding/xml"
 	"fmt"
 	"html"
+	"io"
 	"log/slog"
 	"net/http"
 	"strings"
@@ -18,6 +19,17 @@ const (
 	archived = "archived"
 	saved    = "saved"
 )
+
+const maxFeedBytes = 10 << 20 // 10MB
+
+var pubDateFormats = []string{
+	time.RFC1123Z,
+	time.RFC822Z,
+	time.RFC3339,
+	time.RFC1123,
+	time.RFC822,
+	"2006-01-02",
+}
 
 type Feed struct {
 	XMLName xml.Name `xml:"rss"`
@@ -64,7 +76,7 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 	}
 
 	var f Feed
-	if err := xml.NewDecoder(resp.Body).Decode(&f); err != nil {
+	if err := xml.NewDecoder(io.LimitReader(resp.Body, maxFeedBytes)).Decode(&f); err != nil {
 		return fmt.Errorf("decode rss feed %s: %w", follow.URL, err)
 	}
 
@@ -100,11 +112,10 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 		var pubDatePtr *time.Time
 		if item.PubDate != "" {
 			var (
-				formats    = []string{time.RFC1123, time.RFC1123Z, time.RFC3339, time.RFC822, time.RFC822Z}
 				parsedTime time.Time
 				parseErr   error
 			)
-			for _, format := range formats {
+			for _, format := range pubDateFormats {
 				if parsedTime, parseErr = time.Parse(format, item.PubDate); parseErr == nil {
 					pubDatePtr = &parsedTime
 					break

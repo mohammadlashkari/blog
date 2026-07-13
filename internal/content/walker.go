@@ -126,8 +126,13 @@ func (c *Content) decodePost(path string) (*Post, error) {
 		return nil, err
 	}
 
+	fmData := frontmatter.Get(mdCtx)
+	if fmData == nil {
+		return nil, errors.New("missing front matter")
+	}
+
 	var fm FrontMatter
-	if err := frontmatter.Get(mdCtx).Decode(&fm); err != nil {
+	if err := fmData.Decode(&fm); err != nil {
 		return nil, err
 	}
 

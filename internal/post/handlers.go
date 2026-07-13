@@ -21,23 +21,24 @@ import (
 	"time"
 )
 
+const maxWebhookBodyBytes = 5 << 20 // 5MB
+
 func (s *PostService) handlePostsIndex(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	activeTag := r.URL.Query().Get("tag")
 
-	opts := []QueryOption{
-		withIncludeUnpublished(auth.IsAdmin(ctx)),
-	}
+	showUnpublished := withIncludeUnpublished(auth.IsAdmin(ctx))
+
+	opts := []QueryOption{showUnpublished}
 	if activeTag != "" {
 		opts = append(opts, withTags(activeTag))
 	}
 
 	posts := s.GetPosts(opts...)
-
 	en, fa := groupByYearAndLang(posts)
 
-	ui.Render(w, r, PostsIndexPage(en, fa, s.GetTags(), activeTag))
+	ui.Render(w, r, PostsIndexPage(en, fa, s.GetTags(showUnpublished), activeTag))
 }
 
 func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
@@ -59,7 +60,7 @@ func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 	}
 	uiPost := buildUIPost(post, "02 January 2006", "%d %B %Y")
 
-	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds["game-of-life"]))
+	ui.Render(w, r, PostPage(uiPost, post.Tags, post.HTML, ui.PostEmbeds[post.EmbedID]))
 }
 
 // handleMedia serves a post's static assets from <postsPath>/<dir>/assets/. Only files
@@ -68,6 +69,11 @@ func (s *PostService) handlePost(w http.ResponseWriter, r *http.Request) {
 func (s *PostService) handleMedia(w http.ResponseWriter, r *http.Request) {
 	postDir := r.PathValue("dir")
 	reqPath := r.PathValue("path")
+
+	if !content.IsValidSlug(postDir) {
+		http.NotFound(w, r)
+		return
+	}
 
 	var (
 		postsPath = filepath.Join(s.cfg.LocalContentPath, "posts")
@@ -95,8 +101,6 @@ type Repository struct {
 	FullName string `json:"full_name"`
 	CloneURL string `json:"clone_url"`
 }
-
-const maxWebhookBodyBytes = 5 << 20 // 5MB
 
 func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -167,7 +171,7 @@ func (s *PostService) handleFeed(lang *content.Language) http.HandlerFunc {
 
 		feed, err := buildFeed(langStr, s.cfg.SiteURL, posts)
 		if err != nil {
-			slog.ErrorContext(r.Context(), "failed to build feed", "erro", err)
+			slog.ErrorContext(r.Context(), "failed to build feed", "error", err)
 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 			return
 		}
@@ -193,6 +197,10 @@ func buildFeed(lang string, siteURL string, posts []*content.Post) ([]byte, erro
 	}
 
 	for _, p := range posts {
+		if p.PublishedAt == nil {
+			continue
+		}
+
 		link := siteURL + "/post/" + p.Slug
 		item := rss.Item{
 			GUID:        link,

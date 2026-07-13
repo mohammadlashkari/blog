@@ -4,9 +4,11 @@ import (
 	"blog/internal/auth"
 	"blog/internal/rss/store"
 	"blog/internal/ui"
+	"context"
 	"log/slog"
 	"net/http"
 	"strconv"
+	"time"
 )
 
 func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
@@ -51,10 +53,14 @@ func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
-	if err := s.Refresh(r.Context()); err != nil {
-		http.Error(w, "failed to refresh reading list", http.StatusInternalServerError)
-		return
-	}
+	go func() {
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+		defer cancel()
+
+		if err := s.Refresh(ctx); err != nil {
+			slog.ErrorContext(ctx, "failed to refresh reading list", "error", err)
+		}
+	}()
 
 	http.Redirect(w, r, "/reading", http.StatusSeeOther)
 }

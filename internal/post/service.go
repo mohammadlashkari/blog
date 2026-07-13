@@ -137,8 +137,27 @@ func (s *PostService) GetPosts(opts ...QueryOption) []*content.Post {
 	return filtered
 }
 
-func (s *PostService) GetTags() []string {
-	return s.index.Load().Tags()
+func (s *PostService) GetTags(opts ...QueryOption) []string {
+	opt := buildQueryOptions(opts...)
+	idx := s.index.Load()
+
+	all := idx.Tags()
+	if opt.includeUnpublished {
+		return all
+	}
+
+	now := time.Now().UTC()
+	tags := make([]string, 0, len(all))
+	for _, tag := range all {
+		for _, p := range idx.ByTag(tag) {
+			if canView(p, now, opt) {
+				tags = append(tags, tag)
+				break
+			}
+		}
+	}
+
+	return tags
 }
 
 func canView(p *content.Post, now time.Time, opt queryOptions) bool {

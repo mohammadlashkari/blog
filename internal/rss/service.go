@@ -5,6 +5,7 @@ import (
 	"blog/internal/rss/store"
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -101,21 +102,23 @@ func (s *Service) update(ctx context.Context, checkHash bool) error {
 				wg.Done()
 			}()
 			if err := s.fetchFeed(ctx, feed); err != nil {
-				slog.ErrorContext(ctx, "fetch feed failed", "feed", feed, "error", err)
+				slog.ErrorContext(ctx, "fetch feed failed", "feed", feed.URL, "error", err)
 				mu.Lock()
-				errs = append(errs, fmt.Errorf("feed %s: %w", feed, err))
+				errs = append(errs, fmt.Errorf("feed %s: %w", feed.URL, err))
 				mu.Unlock()
 			}
 		}()
 	}
 	wg.Wait()
 
+	if len(errs) > 0 {
+		// Leave lastHash untouched: committing it on a failed run would make every
+		// later hash-checked Sync skip the fetch.
+		return fmt.Errorf("completed with %d feed errors: %w", len(errs), errors.Join(errs...))
+	}
+
 	s.lastHash = newHash
 	slog.InfoContext(ctx, "rss refresh process completed")
-
-	if len(errs) > 0 {
-		return fmt.Errorf("completed with %d feed errors", len(errs))
-	}
 
 	return nil
 }
