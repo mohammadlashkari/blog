@@ -7,7 +7,7 @@ import (
 )
 
 func Execute() error {
-	cfg, err := config.Dev()
+	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
@@ -21,7 +21,7 @@ func rootCmd(cfg *config.Config) *cobra.Command {
 		Short: "My blog CLI",
 	}
 
-	root.AddCommand(postCmd())
+	root.AddCommand(postCmd(cfg))
 	root.AddCommand(readingCmd(cfg))
 	return root
 }
