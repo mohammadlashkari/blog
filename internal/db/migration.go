@@ -6,7 +6,7 @@ import (
 	"errors"
 
 	"github.com/golang-migrate/migrate/v4"
-	"github.com/golang-migrate/migrate/v4/database/sqlite3"
+	"github.com/golang-migrate/migrate/v4/database/sqlite"
 	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
@@ -19,12 +19,12 @@ func migrateUP(db *sql.DB) error {
 		return err
 	}
 
-	dbDriver, err := sqlite3.WithInstance(db, &sqlite3.Config{})
+	dbDriver, err := sqlite.WithInstance(db, &sqlite.Config{})
 	if err != nil {
 		return err
 	}
 
-	m, err := migrate.NewWithInstance("iofs", sourceDriver, "sqlite3", dbDriver)
+	m, err := migrate.NewWithInstance("iofs", sourceDriver, "sqlite", dbDriver)
 	if err != nil {
 		return err
 	}
