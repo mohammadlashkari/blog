@@ -22,3 +22,9 @@ services:
       TOKEN_VERSION: "1"
     volumes:
       - ./data:/data
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:2026/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s

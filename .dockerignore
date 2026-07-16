@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+*.md
+bin/
+data/
+*blog.db*
+doc/
+LICENSE
