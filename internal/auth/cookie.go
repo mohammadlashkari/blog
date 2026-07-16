@@ -56,7 +56,7 @@ func writeEncrypted(w http.ResponseWriter, cookie http.Cookie, secretKey string)
 	if err != nil {
 		return err
 	}
-	if len(secretKey) != 32 {
+	if len(secret) != 32 {
 		return fmt.Errorf("cookie secret must decode to 32 bytes, got %d", len(secretKey))
 	}
 

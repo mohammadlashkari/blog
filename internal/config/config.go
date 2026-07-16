@@ -3,6 +3,7 @@ package config
 import (
 	"errors"
 	"os"
+	"path/filepath"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
@@ -28,12 +29,16 @@ type Config struct {
 }
 
 func Dev() (*Config, error) {
+	home, err := os.UserHomeDir()
+	if err != nil {
+		return nil, err
+	}
 	return &Config{
 		Env:               "develop",
 		Port:              "2026",
 		DBPath:            "blog.db",
 		SiteURL:           "myblog",
-		LocalContentPath:  "/home/lsk/blog-content",
+		LocalContentPath:  filepath.Join(home, "blog-content"),
 		RemoteContentPath: "https://github.com/mohammadlashkari/blog-content.git",
 		LimiterEnable:     false,
 		WebhookSecret:     "secret",
