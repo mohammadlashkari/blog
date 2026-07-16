@@ -1,4 +1,3 @@
-bin
+/bin
 .env
-wasm_exec*.js
 *blog.db*
