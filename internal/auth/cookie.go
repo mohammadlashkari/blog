@@ -7,6 +7,7 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/gob"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"io"
@@ -22,7 +23,12 @@ var (
 )
 
 func (s *AuthService) IsSessionValid(ctx context.Context, r *http.Request) bool {
-	gobEncodedValue, err := readEncrypted(r, sessionCookie, s.cfg.CookieSecret)
+	secret, err := hex.DecodeString(s.cfg.CookieSecret)
+	if err != nil {
+		return false
+	}
+
+	gobEncodedValue, err := readEncrypted(r, sessionCookie, secret)
 	if err != nil {
 		if !errors.Is(err, http.ErrNoCookie) {
 			slog.ErrorContext(ctx, "failed to read cookie", "error", err)
@@ -45,8 +51,16 @@ func (s *AuthService) IsSessionValid(ctx context.Context, r *http.Request) bool 
 	return true
 }
 
-func writeEncrypted(w http.ResponseWriter, cookie http.Cookie, secretKey []byte) error {
-	block, err := aes.NewCipher(secretKey)
+func writeEncrypted(w http.ResponseWriter, cookie http.Cookie, secretKey string) error {
+	secret, err := hex.DecodeString(secretKey)
+	if err != nil {
+		return err
+	}
+	if len(secretKey) != 32 {
+		return fmt.Errorf("cookie secret must decode to 32 bytes, got %d", len(secretKey))
+	}
+
+	block, err := aes.NewCipher(secret)
 	if err != nil {
 		return err
 	}

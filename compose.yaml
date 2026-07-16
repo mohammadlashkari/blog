@@ -5,18 +5,20 @@ services:
     restart: unless-stopped
     ports:
       - "2026:2026"
+    env_file:
+      - .env
     environment:
+      ENV: "production"
       PORT: "2026"
-      SQLITE_PATH: "/data/blog.db"
+      DB_PATH: "/data/blog.db"
+      SITE_URL: "https://mohammadlashkari.com"
       LIMITER_RPS: "10"
       LIMITER_BURST: "20"
       LIMITER_ENABLE: "true"
-      LOCAL_CONTENT_REPO: "/data/blog-content"
-      REMOTE_CONTENT_REPO: "https://github.com/mohammadlashkari/blog-content.git"
-      WEBHOOK_SECRET: "secret"
-
+      LOCAL_CONTENT_PATH: "/data/blog-content"
+      REMOTE_CONTENT_PATH: "https://github.com/mohammadlashkari/blog-content.git"
+      MAIN_BRANCH_NAME: "master"
+      CONTENT_FILENAME: "index.md"
+      TOKEN_VERSION: "1"
     volumes:
-      - blog-data:/data
-
-volumes:
-  blog-data:
+      - ./data:/data

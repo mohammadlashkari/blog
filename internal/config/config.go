@@ -1,7 +1,6 @@
 package config
 
 import (
-	"encoding/hex"
 	"errors"
 	"os"
 
@@ -21,7 +20,7 @@ type Config struct {
 	RemoteContentPath string  `env:"REMOTE_CONTENT_PATH,required"`
 	MainBranchName    string  `env:"MAIN_BRANCH_NAME,required"`
 	WebhookSecret     string  `env:"WEBHOOK_SECRET,required"`
-	CookieSecret      []byte  `env:"COOKIE_SECRET,required"`
+	CookieSecret      string  `env:"COOKIE_SECRET,required"`
 	AdminToken        string  `env:"ADMIN_TOKEN,required"`
 	AdminUser         string  `env:"ADMIN_USER,required"`
 	TokenVersion      int     `env:"TOKEN_VERSION,required"`
@@ -29,7 +28,6 @@ type Config struct {
 }
 
 func Dev() (*Config, error) {
-	s, _ := hex.DecodeString("13d6b4dff8f84a10851021ec8608f814570d562c92fe6b5ec4c9f595bcb3234b")
 	return &Config{
 		Env:               "develop",
 		Port:              "2026",
@@ -39,7 +37,7 @@ func Dev() (*Config, error) {
 		RemoteContentPath: "https://github.com/mohammadlashkari/blog-content.git",
 		LimiterEnable:     false,
 		WebhookSecret:     "secret",
-		CookieSecret:      s,
+		CookieSecret:      "secret",
 		MainBranchName:    "master",
 		ContentFilename:   "index.md",
 		AdminToken:        "secret",
