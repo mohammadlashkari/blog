@@ -3,7 +3,6 @@ package config
 import (
 	"errors"
 	"os"
-	"path/filepath"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
@@ -26,28 +25,6 @@ type Config struct {
 	AdminUser         string  `env:"ADMIN_USER,required"`
 	TokenVersion      int     `env:"TOKEN_VERSION,required"`
 	ContentFilename   string  `env:"CONTENT_FILENAME,required"`
-}
-
-func Dev() (*Config, error) {
-	home, err := os.UserHomeDir()
-	if err != nil {
-		return nil, err
-	}
-	return &Config{
-		Env:               "develop",
-		Port:              "2026",
-		DBPath:            "blog.db",
-		SiteURL:           "myblog",
-		LocalContentPath:  filepath.Join(home, "blog-content"),
-		RemoteContentPath: "https://github.com/mohammadlashkari/blog-content.git",
-		LimiterEnable:     false,
-		WebhookSecret:     "secret",
-		CookieSecret:      "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-		MainBranchName:    "master",
-		ContentFilename:   "index.md",
-		AdminToken:        "secret",
-		AdminUser:         "admin",
-	}, nil
 }
 
 func Load() (*Config, error) {

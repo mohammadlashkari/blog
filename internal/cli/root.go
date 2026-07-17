@@ -7,7 +7,7 @@ import (
 )
 
 func Execute() error {
-	cfg, err := config.Dev()
+	cfg, err := config.Load()
 	if err != nil {
 		return err
 	}
