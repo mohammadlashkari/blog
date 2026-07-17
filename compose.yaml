@@ -1,10 +1,35 @@
 services:
-  server:
-    image: ghcr.io/mohammadlashkari/blog/blog
-    container_name: blog
-    restart: unless-stopped
+  reverse-proxy:
+    image: traefik:v3.7
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entryPoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=mohammad@mohammadlashkari.com"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
     ports:
-      - "2026:2026"
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - letsencrypt:/letsencrypt
+
+  blog:
+    image: ghcr.io/mohammadlashkari/blog:latest
+    restart: always
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.blog.rule=Host(`mohammadlashkari.com`)"
+      - "traefik.http.routers.blog.entrypoints=websecure"
+      - "traefik.http.routers.blog.tls.certresolver=myresolver"
+    deploy:
+      mode: replicated
+      replicas: 3
     env_file:
       - .env
     environment:
@@ -21,10 +46,14 @@ services:
       CONTENT_FILENAME: "index.md"
       TOKEN_VERSION: "1"
     volumes:
-      - ./data:/data
+      - blog-db:/data
     healthcheck:
       test: ["CMD", "wget", "-qO-", "http://localhost:2026/health"]
       interval: 30s
       timeout: 5s
       retries: 3
       start_period: 20s
+
+volumes:
+  blog-db:
+  letsencrypt:
