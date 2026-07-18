@@ -1,8 +1,8 @@
 services:
   reverse-proxy:
     image: traefik:v3.7
+    restart: always
     command:
-      - "--api.insecure=true"
       - "--providers.docker"
       - "--providers.docker.exposedbydefault=false"
       - "--entryPoints.websecure.address=:443"
@@ -27,11 +27,6 @@ services:
       - "traefik.http.routers.blog.rule=Host(`mohammadlashkari.com`)"
       - "traefik.http.routers.blog.entrypoints=websecure"
       - "traefik.http.routers.blog.tls.certresolver=myresolver"
-    deploy:
-      mode: replicated
-      replicas: 3
-    env_file:
-      - .env
     environment:
       ENV: "production"
       PORT: "2026"
@@ -45,6 +40,14 @@ services:
       MAIN_BRANCH_NAME: "master"
       CONTENT_FILENAME: "index.md"
       TOKEN_VERSION: "1"
+      ADMIN_USER: "admin"
+      ADMIN_TOKEN_FILE: "/run/secrets/admin_token"
+      COOKIE_SECRET_FILE: "/run/secrets/cookie_secret"
+      WEBHOOK_SECRET_FILE: "/run/secrets/webhook_secret"
+    secrets:
+      - admin_token
+      - cookie_secret
+      - webhook_secret
     volumes:
       - blog-db:/data
     healthcheck:
@@ -57,3 +60,11 @@ services:
 volumes:
   blog-db:
   letsencrypt:
+
+secrets:
+  admin_token:
+    file: /opt/blog/secrets/admin_token
+  cookie_secret:
+    file: /opt/blog/secrets/cookie_secret
+  webhook_secret:
+    file: /opt/blog/secrets/webhook_secret

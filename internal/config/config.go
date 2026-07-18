@@ -2,7 +2,9 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"os"
+	"strings"
 
 	"github.com/caarlos0/env/v11"
 	"github.com/joho/godotenv"
@@ -33,9 +35,32 @@ func Load() (*Config, error) {
 		return nil, err
 	}
 
+	// Resolve secrets from files: for any FOO_FILE var, read the file and set FOO.
+	if err := resolveFileSecrets(); err != nil {
+		return nil, err
+	}
+
 	if err := env.Parse(cfg); err != nil {
 		return nil, err
 	}
 
 	return cfg, nil
+}
+
+func resolveFileSecrets() error {
+	for _, e := range os.Environ() {
+		key, path, ok := strings.Cut(e, "=")
+		if !ok || !strings.HasSuffix(key, "_FILE") || path == "" {
+			continue
+		}
+		base := strings.TrimSuffix(key, "_FILE")
+		data, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("read secret file for %s: %w", base, err)
+		}
+		if err := os.Setenv(base, strings.TrimSpace(string(data))); err != nil {
+			return fmt.Errorf("set %s from file: %w", base, err)
+		}
+	}
+	return nil
 }
