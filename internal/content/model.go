@@ -15,14 +15,14 @@ const (
 type FrontMatter struct {
 	Title       string     `yaml:"title"`
 	Slug        string     `yaml:"slug"`
-	CoverImage  string     `yaml:"cover_image"`
 	Description string     `yaml:"description"`
 	Language    Language   `yaml:"language"`
 	IsFavorite  bool       `yaml:"is_favorite"`
 	Tags        []string   `yaml:"tags"`
+	CoverImage  string     `yaml:"cover_image"`
+	EmbedID     string     `yaml:"embed"`
 	PublishedAt *time.Time `yaml:"published_at"`
 	Version     int64      `yaml:"version"`
-	EmbedID     string     `yaml:"embed"`
 }
 
 type Post struct {
