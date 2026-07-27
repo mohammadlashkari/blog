@@ -63,6 +63,12 @@ func run() error {
 		store.NewRSSStore(db),
 	)
 
+	schedulerDone := make(chan struct{})
+	go func() {
+		defer close(schedulerDone)
+		rssSvc.StartDailyRefresh(ctx, 0, 0, time.UTC)
+	}()
+
 	cont := content.New(
 		cfg.LocalContentPath,
 		cfg.RemoteContentPath,
@@ -129,6 +135,14 @@ func run() error {
 
 	if err := srv.Shutdown(shutdownCtx); err != nil {
 		return fmt.Errorf("graceful shutdown: %w", err)
+	}
+
+	// Wait for the refresh scheduler so the deferred db.Close() can't fire
+	// while a refresh is still writing.
+	select {
+	case <-schedulerDone:
+	case <-shutdownCtx.Done():
+		slog.Warn("refresh scheduler did not stop before shutdown deadline")
 	}
 
 	slog.Info("server stopped")
