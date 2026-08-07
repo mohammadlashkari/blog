@@ -63,6 +63,8 @@ func run() error {
 		store.NewRSSStore(db),
 	)
 
+	go rssSvc.StartDailyRefresh(ctx)
+
 	cont := content.New(
 		cfg.LocalContentPath,
 		cfg.RemoteContentPath,
