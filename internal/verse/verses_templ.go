@@ -43,7 +43,7 @@ func VersesPage(verses []Verse) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-4xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Verses</h1><p class=\"mb-7 text-muted\">Poems and quotes I keep coming back to</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-5xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Verses</h1><p class=\"mb-7 text-muted\">Poems and quotes I keep coming back to</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -53,7 +53,7 @@ func VersesPage(verses []Verse) templ.Component {
 					return templ_7745c5c3_Err
 				}
 			} else {
-				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<div class=\"columns-1 gap-4 sm:columns-2 lg:columns-3\">")
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "<!-- below 664px only one 19rem column fits, and a lone column stretches to\n\t\t\t\tfill the container; the cap keeps that card from reaching a 90-character measure --> <div class=\"mx-auto max-w-[23rem] columns-[19rem] gap-4 min-[664px]:max-w-none\">")
 				if templ_7745c5c3_Err != nil {
 					return templ_7745c5c3_Err
 				}
@@ -110,7 +110,7 @@ func verseCard(v Verse) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.ResolveAttributeValue(v.Language.Dir())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 27, Col: 24}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 29, Col: 24}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var4)
 		if templ_7745c5c3_Err != nil {
@@ -123,33 +123,33 @@ func verseCard(v Verse) templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.ResolveAttributeValue(v.Language.Lang())
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 28, Col: 26}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 30, Col: 26}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ_7745c5c3_Var5)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"mb-4 flex min-h-[clamp(9rem,22vw,13rem)] break-inside-avoid flex-col justify-between rounded-md border border-line bg-paper p-5\"><blockquote class=\"text-[0.98rem] leading-[1.9] whitespace-pre-wrap text-ink\">")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 8, "\" class=\"mb-4 break-inside-avoid rounded-md border border-line bg-paper p-5\"><blockquote class=\"verse-body text-[0.98rem] whitespace-pre-wrap text-ink\">")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(v.Text)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 32, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 34, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</blockquote><figcaption class=\"mt-4 text-[0.8rem] text-muted\">&#8212; ")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 9, "</blockquote><figcaption class=\"text-[0.8rem] text-muted\">&#8212; ")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var7 string
 		templ_7745c5c3_Var7, templ_7745c5c3_Err = templ.JoinStringErrs(v.Author)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 35, Col: 21}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/verse/verses.templ`, Line: 37, Col: 21}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var7))
 		if templ_7745c5c3_Err != nil {

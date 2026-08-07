@@ -4,7 +4,7 @@ import "blog/internal/ui"
 
 templ VersesPage(verses []Verse) {
 	@ui.Layout("Verses", "Poems and quotes worth keeping", "verses") {
-		<section class="mx-auto w-full max-w-4xl px-4 sm:px-5">
+		<section class="mx-auto w-full max-w-5xl px-4 sm:px-5">
 			<h1 class="mb-1 text-3xl">Verses</h1>
 			<p class="mb-7 text-muted">
 				Poems and quotes I keep coming back to
@@ -12,7 +12,9 @@ templ VersesPage(verses []Verse) {
 			if len(verses) == 0 {
 				<p class="border-t border-line pt-6 text-[0.9rem] text-muted">Nothing here yet.</p>
 			} else {
-				<div class="columns-1 gap-4 sm:columns-2 lg:columns-3">
+				<!-- below 664px only one 19rem column fits, and a lone column stretches to
+				fill the container; the cap keeps that card from reaching a 90-character measure -->
+				<div class="mx-auto max-w-[23rem] columns-[19rem] gap-4 min-[664px]:max-w-none">
 					for _, v := range verses {
 						@verseCard(v)
 					}
@@ -26,12 +28,12 @@ templ verseCard(v Verse) {
 	<figure
 		dir={ v.Language.Dir() }
 		lang={ v.Language.Lang() }
-		class="mb-4 flex min-h-[clamp(9rem,22vw,13rem)] break-inside-avoid flex-col justify-between rounded-md border border-line bg-paper p-5"
+		class="mb-4 break-inside-avoid rounded-md border border-line bg-paper p-5"
 	>
-		<blockquote class="text-[0.98rem] leading-[1.9] whitespace-pre-wrap text-ink">
+		<blockquote class="verse-body text-[0.98rem] whitespace-pre-wrap text-ink">
 			{ v.Text }
 		</blockquote>
-		<figcaption class="mt-4 text-[0.8rem] text-muted">
+		<figcaption class="text-[0.8rem] text-muted">
 			&#8212; { v.Author }
 		</figcaption>
 	</figure>

@@ -51,9 +51,16 @@
    ============================================================ */
 
 @layer base {
+	/* Vazirmatn's glyphs span 1.56em of the em box (typoAscender 2100,
+	   typoDescender -1100, unitsPerEm 2048) against roughly 1.20-1.36em for the
+	   Latin fallbacks. An identical line-height therefore leaves Farsi with about
+	   a third of the visual gap Latin gets, and any value under ~1.6 makes Farsi
+	   lines overlap outright. Farsi runs on its own scale: 2.0 lands it at the
+	   same ~0.45em gap the Latin stack gets from 1.7. */
 	[lang="fa"],
 	[dir="rtl"] {
 		font-family: var(--font-fa);
+		line-height: 2;
 	}
 
 	h1, h2, h3, h4, h5, h6 {
@@ -72,6 +79,42 @@
 }
 
 /* ============================================================
+   Verse cards
+
+   Lines stay ragged. Poetry lines are fixed-length by construction, so
+   justifying them can only stretch word spaces to reach the column edge —
+   and Persian can't soften that with kashida in a browser.
+   ============================================================ */
+
+@layer components {
+	/* one blank line between the quote and its author. 1lh resolves against
+	   the quote's own line-height, so it tracks the per-script leading and
+	   matches the blank lines separating stanzas inside the text. */
+	.verse-body {
+		margin-block-end: 1.9em;
+		margin-block-end: 1lh;
+	}
+}
+
+/* ============================================================
+   Farsi heading leading
+
+   Deliberately unlayered so it outranks the leading-tight / leading-snug
+   utilities the templates put on headings — those sit in Tailwind's utilities
+   layer, and unlayered rules beat every layer. They resolve to 1.25 and 1.375,
+   both under Vazirmatn's 1.56em glyph span, so a wrapped Farsi title overlaps
+   its own next line. Scoped to RTL so Latin keeps its tight headings.
+   ============================================================ */
+
+[dir="rtl"] :is(h1, h2, h3, h4, h5, h6) {
+	line-height: 1.5;
+}
+/* the post subtitle carries leading-snug (1.375) for the same reason */
+[dir="rtl"] > header > p {
+	line-height: 1.6;
+}
+
+/* ============================================================
    Post prose
 
    The post body is raw goldmark HTML injected via templ.Raw, so its
@@ -84,6 +127,10 @@
 		/* long URLs / words wrap instead of forcing horizontal scroll on
 		   narrow screens (justify makes unbroken tokens overflow otherwise) */
 		overflow-wrap: break-word;
+	}
+	/* see the base layer: Vazirmatn needs its own scale to read evenly */
+	[dir="rtl"] .post-content {
+		line-height: 2.05;
 	}
 	.post-content > :first-child {
 		margin-top: 0;
@@ -106,12 +153,20 @@
 		margin-bottom: 1.4rem;
 	}
 
-	/* Justify prose so long lines fill the column edge-to-edge (EN + FA).
-	   hyphens:auto softens the gaps for Latin; harmless for Farsi. */
+	/* Justify Latin prose so long lines fill the column edge-to-edge;
+	   hyphens:auto softens the gaps. */
 	.post-content p,
 	.post-content li {
 		text-align: justify;
 		hyphens: auto;
+	}
+	/* Persian has no hyphenation dictionary and browsers don't do kashida, so
+	   justification can only stretch the word spaces — which opens rivers of
+	   whitespace at these column widths. Leave Farsi prose ragged. */
+	[dir="rtl"] .post-content p,
+	[dir="rtl"] .post-content li {
+		text-align: start;
+		hyphens: manual;
 	}
 
 	/* preflight strips list markers; prose needs them back */
