@@ -153,6 +153,10 @@ func (s *PostService) handleWebhook(w http.ResponseWriter, r *http.Request) {
 		if err := s.rssSvc.Sync(ctx); err != nil {
 			slog.ErrorContext(ctx, "rss synchronization failed", "error", err)
 		}
+
+		if err := s.verseSvc.Sync(ctx); err != nil {
+			slog.ErrorContext(ctx, "verses synchronization failed", "error", err)
+		}
 	}()
 
 	w.WriteHeader(http.StatusAccepted)

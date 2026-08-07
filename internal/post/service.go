@@ -4,6 +4,7 @@ import (
 	"blog/internal/config"
 	"blog/internal/content"
 	"blog/internal/rss"
+	"blog/internal/verse"
 	"context"
 	"sync/atomic"
 	"time"
@@ -15,19 +16,25 @@ type PostService struct {
 	index      atomic.Pointer[content.Index]
 	refreshing atomic.Bool
 	rssSvc     *rss.Service
+	verseSvc   *verse.Service
 }
 
 func New(
-	ctx context.Context, cfg *config.Config, cont *content.Content, rssSvc *rss.Service,
+	ctx context.Context,
+	cfg *config.Config,
+	cont *content.Content,
+	rssSvc *rss.Service,
+	verseSvc *verse.Service,
 ) (*PostService, error) {
 	idx, err := cont.Build(ctx)
 	if err != nil {
 		return nil, err
 	}
 	s := &PostService{
-		cfg:     cfg,
-		content: cont,
-		rssSvc:  rssSvc,
+		cfg:      cfg,
+		content:  cont,
+		rssSvc:   rssSvc,
+		verseSvc: verseSvc,
 	}
 	s.index.Store(idx)
 

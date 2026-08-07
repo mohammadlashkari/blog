@@ -124,12 +124,9 @@ func farsiNum(s string) string {
 }
 
 func dirOf(l content.Language) string {
-	if l == content.LanguageFa {
-		return "rtl"
-	}
-	return "ltr"
+	return l.Dir()
 }
 
 func langOf(l content.Language) string {
-	return string(l)
+	return l.Lang()
 }
