@@ -8,6 +8,7 @@ import (
 	"blog/internal/post"
 	"blog/internal/rss"
 	"blog/internal/rss/store"
+	"blog/internal/verse"
 	"context"
 	"errors"
 	"expvar"
@@ -72,9 +73,17 @@ func run() error {
 		cfg.ContentFilename,
 	)
 
-	postSvc, err := post.New(ctx, cfg, cont, rssSvc)
+	verseSvc := verse.New(cfg)
+
+	postSvc, err := post.New(ctx, cfg, cont, rssSvc, verseSvc)
 	if err != nil {
 		return fmt.Errorf("failed to boot post service: %w", err)
+	}
+
+	// Must run after post.New: that's what puts the content repo on disk.
+	// An empty verses page is degraded, not fatal, so don't abort the boot.
+	if err := verseSvc.Load(ctx); err != nil {
+		slog.WarnContext(ctx, "failed to load verses", "error", err)
 	}
 
 	authSvc := auth.New(ctx, cfg)
@@ -90,6 +99,7 @@ func run() error {
 	authSvc.RegisterRoutes(mux)
 	postSvc.RegisterRoutes(mux)
 	rssSvc.RegisterRoutes(mux)
+	verseSvc.RegisterRoutes(mux)
 
 	handler := chainMiddlewars(
 		mux,

@@ -12,6 +12,17 @@ const (
 	LanguageFa Language = "fa"
 )
 
+func (l Language) Dir() string {
+	if l == LanguageFa {
+		return "rtl"
+	}
+	return "ltr"
+}
+
+func (l Language) Lang() string {
+	return string(l)
+}
+
 type FrontMatter struct {
 	Title       string     `yaml:"title"`
 	Slug        string     `yaml:"slug"`
