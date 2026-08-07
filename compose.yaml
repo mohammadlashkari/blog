@@ -60,6 +60,8 @@ services:
 volumes:
   blog-db:
   letsencrypt:
+    external: true
+    name: blog_letsencrypt
 
 secrets:
   admin_token:
