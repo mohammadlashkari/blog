@@ -94,6 +94,10 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 	}
 
 	for _, item := range f.Channel.Items {
+		item.GUID = strings.TrimSpace(item.GUID)
+		item.Link = strings.TrimSpace(item.Link)
+		item.Title = strings.TrimSpace(item.Title)
+
 		guid := item.GUID
 		if guid == "" {
 			guid = item.Link
