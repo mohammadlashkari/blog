@@ -3,14 +3,11 @@ package rss
 import (
 	"blog/internal/rss/store"
 	"context"
-	"encoding/xml"
 	"fmt"
-	"html"
 	"io"
 	"log/slog"
 	"net/http"
 	"strings"
-	"time"
 )
 
 const (
@@ -22,62 +19,15 @@ const (
 
 const maxFeedBytes = 10 << 20 // 10MB
 
-var pubDateFormats = []string{
-	time.RFC1123Z,
-	time.RFC822Z,
-	time.RFC3339,
-	time.RFC1123,
-	time.RFC822,
-	"2006-01-02",
-}
-
-type Feed struct {
-	XMLName xml.Name `xml:"rss"`
-	Version string   `xml:"version,attr"`
-	Channel Channel  `xml:"channel"`
-}
-
-type Channel struct {
-	Title         string `xml:"title"`
-	Link          string `xml:"link"`
-	Description   string `xml:"description"`
-	Language      string `xml:"language"`
-	Copyright     string `xml:"copyright"`
-	LastBuildDate string `xml:"lastBuildDate"`
-	Docs          string `xml:"docs"`
-	Items         []Item `xml:"item"`
-}
-
-type Item struct {
-	GUID        string   `xml:"guid"`
-	Title       string   `xml:"title"`
-	Author      string   `xml:"author"`
-	Link        string   `xml:"link"`
-	Description string   `xml:"description"`
-	Categories  []string `xml:"category"`
-	PubDate     string   `xml:"pubDate"`
-}
-
 func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, follow.URL, nil)
+	body, err := s.downloadFeed(ctx, follow.URL)
 	if err != nil {
-		return fmt.Errorf("create request for %s: %w", follow.URL, err)
+		return err
 	}
-	req.Header.Set("User-Agent", "mohammadlashkari.com (RSS Reader)")
 
-	resp, err := s.httpClient.Do(req)
+	items, err := parseFeed(ctx, body, follow.URL)
 	if err != nil {
-		return fmt.Errorf("http execute for %s: %w", follow.URL, err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status %s for %s", resp.Status, follow.URL)
-	}
-
-	var f Feed
-	if err := xml.NewDecoder(io.LimitReader(resp.Body, maxFeedBytes)).Decode(&f); err != nil {
-		return fmt.Errorf("decode rss feed %s: %w", follow.URL, err)
+		return fmt.Errorf("parse feed %s: %w", follow.URL, err)
 	}
 
 	exists, err := s.store.CheckFeedExists(ctx, follow.URL)
@@ -93,45 +43,21 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 		status = archived
 	}
 
-	for _, item := range f.Channel.Items {
-		item.GUID = strings.TrimSpace(item.GUID)
-		item.Link = strings.TrimSpace(item.Link)
-		item.Title = strings.TrimSpace(item.Title)
-
-		guid := item.GUID
-		if guid == "" {
-			guid = item.Link
-		}
-		if guid == "" {
+	for _, item := range items {
+		if item.GUID == "" {
 			slog.WarnContext(ctx, "skipping item with no guid or link", "feed", follow.URL)
+			continue
+		}
+		// An entry with no link is dead weight in a reading list: the card
+		// renders, but clicking it goes nowhere.
+		if item.Link == "" {
+			slog.WarnContext(ctx, "skipping item with no link", "feed", follow.URL, "guid", item.GUID)
 			continue
 		}
 
 		var description *string
 		if item.Description != "" {
-			desc := cleanDescription(item.Description)
-			description = &desc
-		}
-
-		var pubDatePtr *time.Time
-		if item.PubDate != "" {
-			var (
-				parsedTime time.Time
-				parseErr   error
-			)
-			for _, format := range pubDateFormats {
-				if parsedTime, parseErr = time.Parse(format, item.PubDate); parseErr == nil {
-					pubDatePtr = &parsedTime
-					break
-				}
-			}
-
-			if parseErr != nil {
-				slog.WarnContext(ctx, "failed to parse pub date using known formats, leaving nil",
-					"date", item.PubDate,
-					"guid", guid,
-				)
-			}
+			description = &item.Description
 		}
 
 		var categories *string
@@ -141,21 +67,49 @@ func (s *Service) fetchFeed(ctx context.Context, follow FollowedFeed) error {
 		}
 
 		err = s.store.CreateRssItem(ctx, store.CreateRssItemParams{
-			Guid:        guid,
+			Guid:        item.GUID,
 			Link:        item.Link,
 			FeedName:    follow.Name,
 			FeedUrl:     follow.URL,
-			Title:       html.UnescapeString(item.Title),
+			Title:       item.Title,
 			Description: description,
 			Status:      status,
-			PublishedAt: pubDatePtr,
+			PublishedAt: item.Published,
 			Categories:  categories,
 		})
 		if err != nil {
-			slog.WarnContext(ctx, "failed to create rss item", "guid", guid, "error", err)
+			slog.WarnContext(ctx, "failed to create rss item", "guid", item.GUID, "error", err)
 			continue
 		}
 	}
 
 	return nil
+}
+
+func (s *Service) downloadFeed(ctx context.Context, feedURL string) ([]byte, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, feedURL, nil)
+	if err != nil {
+		return nil, fmt.Errorf("create request for %s: %w", feedURL, err)
+	}
+	req.Header.Set("User-Agent", "mohammadlashkari.com (RSS Reader)")
+	req.Header.Set("Accept", "application/atom+xml, application/rss+xml, application/xml;q=0.9, */*;q=0.8")
+
+	resp, err := s.httpClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("http execute for %s: %w", feedURL, err)
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("unexpected status %s for %s", resp.Status, feedURL)
+	}
+
+	// Buffered rather than streamed: detecting the dialect and decoding it both
+	// need to read from the start.
+	body, err := io.ReadAll(io.LimitReader(resp.Body, maxFeedBytes))
+	if err != nil {
+		return nil, fmt.Errorf("read feed body for %s: %w", feedURL, err)
+	}
+
+	return body, nil
 }

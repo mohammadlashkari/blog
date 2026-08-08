@@ -1,0 +1,25 @@
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>
+&lt;antirez&gt;
+</title>
+ <link>
+http://antirez.com
+</link>
+ <description>Description pending</description> <item><title>
+The real AI risk is inside the labs
+</title>
+ <guid>http://antirez.com/news/172</guid> <link>
+http://antirez.com/news/172
+</link>
+ <pubDate>Tue, 28 Jul 2026 11:00:11 +0200</pubDate> <description><![CDATA[Amodei in his latest blog post wrote a mix of agreeable things.
+<br>
+<br>1. Focus on the modalities, not the outcomes.]]></description>
+ </item>
+ <item><title>
+Human coders are still better than LLMs
+</title>
+ <guid>http://antirez.com/news/171</guid> <link>
+http://antirez.com/news/171?a=1&amp;lt=2&amp;copy=3
+</link>
+ <pubDate>Mon, 20 Jul 2026 09:12:00 +0200</pubDate> <description>Plain description</description>
+ </item>
+ </channel></rss>
