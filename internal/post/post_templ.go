@@ -46,7 +46,7 @@ func PostPage(post uiPost, tags []string, htmlContent string, component templ.Co
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"mx-auto w-full max-w-3xl px-4 sm:px-5\" dir=\"")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<article class=\"mx-auto w-full max-w-shell px-4 sm:px-5\" dir=\"")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

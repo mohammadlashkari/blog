@@ -2,6 +2,11 @@ package verse
 
 import "blog/internal/ui"
 
+// VersesPage is deliberately the one page off the shared --container-shell
+// width. max-w-5xl (64rem) leaves room for three masonry columns at the
+// 19rem column width below; the 56rem shell only fits two. Cards hold short
+// quoted text, not the long-form prose the shell measure is tuned for, so the
+// extra width costs nothing in readability here.
 templ VersesPage(verses []Verse) {
 	@ui.Layout("Verses", "Poems and quotes worth keeping", "verses") {
 		<section class="mx-auto w-full max-w-5xl px-4 sm:px-5">

@@ -51,7 +51,7 @@ func PostsIndexPage(
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"mx-auto w-full max-w-4xl px-4 sm:px-5\"><img src=\"/static/img/cover.jpg\" alt=\"\" width=\"1080\" height=\"360\" class=\"mb-6 aspect-[3/1] w-full rounded-md border border-line object-cover\"><p class=\"text-lg text-muted-foreground\">Thoughts, notes, and experiments</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<header class=\"mx-auto w-full max-w-shell px-4 sm:px-5\"><img src=\"/static/img/cover.jpg\" alt=\"\" width=\"1080\" height=\"360\" class=\"mb-6 aspect-[3/1] w-full rounded-md border border-line object-cover\"><p class=\"text-lg text-muted\">Thoughts, notes, and experiments</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -87,7 +87,7 @@ func PostsIndexPage(
 					return templ_7745c5c3_Err
 				}
 			}
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</header><section class=\"mx-auto w-full max-w-4xl px-4 sm:px-5\"><div class=\"mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]\"><!-- English --><section dir=\"ltr\">")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 7, "</header><section class=\"mx-auto w-full max-w-shell px-4 sm:px-5\"><div class=\"mt-8 grid grid-cols-1 gap-10 min-[900px]:grid-cols-2 min-[900px]:gap-[clamp(2rem,5vw,4.5rem)]\"><!-- English --><section dir=\"ltr\">")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

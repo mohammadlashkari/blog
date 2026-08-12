@@ -47,7 +47,7 @@ func ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) templ
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-3xl px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Reading</h1><br><p class=\"mb-2 text-muted\">A reading list from the RSS feeds I follow</p>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<section class=\"mx-auto w-full max-w-shell px-4 sm:px-5\"><h1 class=\"mb-1 text-3xl\">Reading</h1><br><p class=\"mb-2 text-muted\">A reading list from the RSS feeds I follow (happy to get good recommendations)</p>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

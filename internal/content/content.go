@@ -115,7 +115,6 @@ func newMDParser() goldmark.Markdown {
 			),
 		),
 		goldmark.WithRendererOptions(
-			html.WithHardWraps(),
 			html.WithXHTML(),
 			html.WithUnsafe(),
 		),

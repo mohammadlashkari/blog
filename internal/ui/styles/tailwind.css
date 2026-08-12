@@ -35,6 +35,14 @@
 		"Helvetica Neue", Arial, sans-serif;
 	--font-fa: "Vazirmatn", Tahoma, sans-serif;
 
+	/* One width for the whole site: header, footer, list pages, post body,
+	   code blocks — everything shares this edge. Paired with the scaled root
+	   font-size below it puts body copy near 100 characters per line, past
+	   the usual comfortable ceiling; that's a deliberate trade for filling a
+	   wide display. The --container-* namespace is what Tailwind builds
+	   max-w-* from, so this yields the max-w-shell utility. */
+	--container-shell: 56rem;
+
 	/* warm near-neutral paper, single indigo accent */
 	--color-paper: #fcfcfb;
 	--color-ink: #20201d;
@@ -51,6 +59,19 @@
    ============================================================ */
 
 @layer base {
+	/* Every width in this stylesheet is expressed in rem, so growing the root
+	   font-size widens the column and the text it holds by the same factor —
+	   the line stays ~85 characters while filling more of a large display.
+	   Percentages, not px: px would discard a reader's own browser font-size.
+	   Breakpoints are below Tailwind's xl/2xl on purpose; they key off physical
+	   screen room, not the layout breakpoints the templates use. */
+	@media (min-width: 1280px) {
+		:root { font-size: 106.25%; } /* 17px at a 16px default */
+	}
+	@media (min-width: 1600px) {
+		:root { font-size: 115.625%; } /* 18.5px at a 16px default */
+	}
+
 	/* Vazirmatn's glyphs span 1.56em of the em box (typoAscender 2100,
 	   typoDescender -1100, unitsPerEm 2048) against roughly 1.20-1.36em for the
 	   Latin fallbacks. An identical line-height therefore leaves Farsi with about
@@ -146,6 +167,31 @@
 		margin-bottom: 0.75rem;
 		font-size: 1.2rem;
 	}
+	/* Preflight resets every heading to font-size: inherit, so a level with no
+	   rule here renders at body size — bold, but indistinguishable from a
+	   paragraph. h2/h3 carry the post body; these exist so a stray level fails
+	   visibly instead of silently. h1 stays under the post title's clamp
+	   minimum (1.9rem) so it can never outweigh the title. */
+	.post-content h1 {
+		margin-top: 3rem;
+		margin-bottom: 1.25rem;
+		font-size: 1.8rem;
+	}
+	.post-content h4 {
+		margin-top: 1.75rem;
+		margin-bottom: 0.6rem;
+		font-size: 1.05rem;
+	}
+	/* below body size these need a second signal, not just weight */
+	.post-content h5,
+	.post-content h6 {
+		margin-top: 1.5rem;
+		margin-bottom: 0.5rem;
+		font-size: 0.95rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
 
 	.post-content p,
 	.post-content ul,
@@ -154,11 +200,20 @@
 	}
 
 	/* Justify Latin prose so long lines fill the column edge-to-edge;
-	   hyphens:auto softens the gaps. */
+	   hyphens:auto softens the gaps. Hyphenation needs the lang attribute to
+	   pick a dictionary — post.templ sets it on the <article>.
+	   hyphenate-limit-chars keeps the breaks readable: only words of 6+
+	   characters split, leaving at least 3 on each side, so the column edge
+	   doesn't fill with two-letter fragments. Safari still wants the prefix.
+	   text-wrap: pretty is what stops a one-word last line; it does not
+	   override justify, which already leaves the final line ragged. */
 	.post-content p,
 	.post-content li {
 		text-align: justify;
+		-webkit-hyphens: auto;
 		hyphens: auto;
+		hyphenate-limit-chars: 6 3 3;
+		text-wrap: pretty;
 	}
 	/* Persian has no hyphenation dictionary and browsers don't do kashida, so
 	   justification can only stretch the word spaces — which opens rivers of
@@ -182,6 +237,25 @@
 	}
 	.post-content li {
 		margin-bottom: 0.4rem;
+	}
+	/* A single blank line anywhere in a markdown list makes the whole list
+	   "loose", and goldmark then wraps every item's content in a <p> — which
+	   picks up the 1.4rem paragraph margin above and spaces the bullets like
+	   separate paragraphs. Flatten all of them rather than just the last —
+	   an item holding a nested sub-list ends <p> then <ul>, so :last-child
+	   would leave that one gap behind. An item that genuinely has two
+	   paragraphs gets its spacing back from the sibling rule. */
+	.post-content li > p {
+		margin-bottom: 0;
+	}
+	.post-content li > p + p {
+		margin-top: 1.4rem;
+	}
+	/* nested lists are children of an <li>, so the list margin above applies
+	   to them too and leaves a paragraph-sized hole after the sub-list */
+	.post-content li > :is(ul, ol) {
+		margin-top: 0.4rem;
+		margin-bottom: 0;
 	}
 	.post-content li::marker {
 		color: var(--color-muted);
