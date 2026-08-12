@@ -216,11 +216,11 @@
 		text-wrap: pretty;
 	}
 	/* Persian has no hyphenation dictionary and browsers don't do kashida, so
-	   justification can only stretch the word spaces — which opens rivers of
-	   whitespace at these column widths. Leave Farsi prose ragged. */
+	   justification here can only stretch the word spaces. Keep justify anyway
+	   (matches the Latin posts), but turn hyphenation off — there's no
+	   dictionary to break with. */
 	[dir="rtl"] .post-content p,
 	[dir="rtl"] .post-content li {
-		text-align: start;
 		hyphens: manual;
 	}
 
