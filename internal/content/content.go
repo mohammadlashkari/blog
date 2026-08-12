@@ -17,7 +17,6 @@ import (
 	"github.com/yuin/goldmark/text"
 	"github.com/yuin/goldmark/util"
 	"go.abhg.dev/goldmark/frontmatter"
-	"go.abhg.dev/goldmark/mermaid"
 )
 
 type Content struct {
@@ -89,13 +88,10 @@ func rewriteAsset(src, base string) string {
 func newMDParser() goldmark.Markdown {
 	md := goldmark.New(
 		goldmark.WithExtensions(
+			// GFM already bundles Linkify, Table, Strikethrough and TaskList.
 			extension.GFM,
-			extension.Linkify,
 			extension.Footnote,
 			extension.Typographer,
-			extension.Table,
-			extension.Strikethrough,
-			extension.TaskList,
 			extension.DefinitionList,
 			// Class-based output, not inline styles: the CSP sets
 			// style-src 'self', which strips style attributes. Token colors
@@ -104,7 +100,6 @@ func newMDParser() goldmark.Markdown {
 				highlighting.WithStyle("github"),
 				highlighting.WithFormatOptions(chromahtml.WithClasses(true)),
 			),
-			&mermaid.Extender{},
 			&frontmatter.Extender{},
 		),
 		goldmark.WithParserOptions(
@@ -117,6 +112,7 @@ func newMDParser() goldmark.Markdown {
 		goldmark.WithRendererOptions(
 			html.WithXHTML(),
 			html.WithUnsafe(),
+			html.WithHardWraps(),
 		),
 	)
 

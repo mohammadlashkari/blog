@@ -77,9 +77,12 @@
 	   Latin fallbacks. An identical line-height therefore leaves Farsi with about
 	   a third of the visual gap Latin gets, and any value under ~1.6 makes Farsi
 	   lines overlap outright. Farsi runs on its own scale: 2.0 lands it at the
-	   same ~0.45em gap the Latin stack gets from 1.7. */
-	[lang="fa"],
-	[dir="rtl"] {
+	   same ~0.45em gap the Latin stack gets from 1.7.
+
+	   <html> is excluded on purpose: a Farsi post sets lang="fa" there so the
+	   title and meta description are tagged correctly, but the header, nav and
+	   footer around it stay English and keep the Latin stack. */
+	:is([lang="fa"], [dir="rtl"]):not(html) {
 		font-family: var(--font-fa);
 		line-height: 2;
 	}
@@ -318,9 +321,7 @@
 		line-height: 1.6;
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
-	}
-	/* code blocks stay LTR inside Farsi posts */
-	.post-content pre {
+		/* code blocks stay LTR inside Farsi posts */
 		direction: ltr;
 		text-align: left;
 	}

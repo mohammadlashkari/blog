@@ -11,7 +11,7 @@ templ PostsIndexPage(
 	tags []string,
 	activeTag string,
 ) {
-	@ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "posts") {
+	@ui.Layout("Mohammad Lashkari", "Thoughts, notes, and experiments", "posts", "en") {
 		<header class="mx-auto w-full max-w-shell px-4 sm:px-5">
 			<img
 				src="/static/img/cover.jpg"
@@ -20,6 +20,7 @@ templ PostsIndexPage(
 				height="360"
 				class="mb-6 aspect-[3/1] w-full rounded-md border border-line object-cover"
 			/>
+			<h1 class="sr-only">Mohammad Lashkari</h1>
 			<p class="text-lg text-muted">
 				Thoughts, notes, and experiments
 			</p>
@@ -74,9 +75,9 @@ templ tagLink(href, label string, isActive bool) {
 }
 
 templ yearHeading(year string) {
-	<h3 class="mt-8 mb-3 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase first:mt-0">
+	<h2 class="mt-8 mb-3 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase first:mt-0">
 		{ year }
-	</h3>
+	</h2>
 }
 
 templ PostList(posts []uiPost) {

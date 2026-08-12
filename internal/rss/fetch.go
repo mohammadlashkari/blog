@@ -41,7 +41,7 @@ type Channel struct {
 	Title         string `xml:"title"`
 	Link          string `xml:"link"`
 	Description   string `xml:"description"`
-	Language      string `xml:"language"`
+	Language      string `xml:"language,omitempty"`
 	Copyright     string `xml:"copyright"`
 	LastBuildDate string `xml:"lastBuildDate"`
 	Docs          string `xml:"docs"`
@@ -53,7 +53,7 @@ type Item struct {
 	Title       string   `xml:"title"`
 	Author      string   `xml:"author"`
 	Link        string   `xml:"link"`
-	Description string   `xml:"description"`
+	Description string   `xml:"description,omitempty"`
 	Categories  []string `xml:"category"`
 	PubDate     string   `xml:"pubDate"`
 }

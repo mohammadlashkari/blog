@@ -7,10 +7,9 @@ import (
 )
 
 templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
-	@ui.Layout("Reading", "Things i read", "reading") {
+	@ui.Layout("Reading", "Things i read", "reading", "en") {
 		<section class="mx-auto w-full max-w-shell px-4 sm:px-5">
 			<h1 class="mb-1 text-3xl">Reading</h1>
-			<br/>
 			<p class="mb-2 text-muted">
 				A reading list from the RSS feeds I follow (happy to get good recommendations)
 			</p>
@@ -23,19 +22,20 @@ templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
 							href={ templ.URL(item.Link) }
 							target="_blank"
 							rel="noopener noreferrer"
-							class="hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+							dir="auto"
+							class="inline-block hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
 						>
 							{ item.Title }
 						</a>
 						<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
-							<span>{ item.FeedName }</span>
+							<span dir="auto">{ item.FeedName }</span>
 							if item.PublishedAt != nil {
 								<span aria-hidden="true">·</span>
 								<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
 							}
 						</div>
 						if item.Description != nil && *item.Description != "" {
-							<p class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
+							<p dir="auto" class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
 								{ *item.Description }
 							</p>
 						}

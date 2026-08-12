@@ -193,7 +193,7 @@ func PostPage(post uiPost, tags []string, htmlContent string, component templ.Co
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = ui.Layout(post.Title, post.Description, "").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.Layout(post.Title, post.Description, "", langOf(post.Language)).Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

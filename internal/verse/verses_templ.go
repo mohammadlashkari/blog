@@ -79,7 +79,7 @@ func VersesPage(verses []Verse) templ.Component {
 			}
 			return nil
 		})
-		templ_7745c5c3_Err = ui.Layout("Verses", "Poems and quotes worth keeping", "verses").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
+		templ_7745c5c3_Err = ui.Layout("Verses", "Poems and quotes worth keeping", "verses", "en").Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

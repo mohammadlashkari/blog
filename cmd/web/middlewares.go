@@ -141,7 +141,7 @@ func secureHeaders(next http.Handler) http.Handler {
 				"script-src 'self' 'wasm-unsafe-eval' 'nonce-"+nonce+"'; "+
 				"style-src 'self'; "+
 				"font-src 'self'; "+
-				"img-src 'self'; "+
+				"img-src 'self' https: data:; "+
 				"object-src 'none'; "+
 				"base-uri 'none'; "+
 				"form-action 'self'; "+

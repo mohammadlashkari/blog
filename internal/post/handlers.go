@@ -197,7 +197,7 @@ func buildFeed(lang string, siteURL string, posts []*content.Post) ([]byte, erro
 	}
 
 	if len(posts) > 0 && posts[0].PublishedAt != nil {
-		ch.LastBuildDate = posts[0].PublishedAt.Format(time.RFC1123)
+		ch.LastBuildDate = posts[0].PublishedAt.Format(time.RFC1123Z)
 	}
 
 	for _, p := range posts {
@@ -213,7 +213,7 @@ func buildFeed(lang string, siteURL string, posts []*content.Post) ([]byte, erro
 			Author:      "Mohammad Lashkari",
 			Description: p.Description,
 			Categories:  p.Tags,
-			PubDate:     p.PublishedAt.Format(time.RFC1123),
+			PubDate:     p.PublishedAt.Format(time.RFC1123Z),
 		}
 		ch.Items = append(ch.Items, item)
 	}
