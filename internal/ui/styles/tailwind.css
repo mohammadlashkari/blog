@@ -359,6 +359,13 @@
 		color: var(--color-muted);
 		font-size: 0.9rem;
 	}
+
+	/* goldmark auto-inserts an <hr> before the footnotes block; the
+	   section already has its own border-top separator, so hide it to
+	   avoid a double line. */
+	.post-content .footnotes hr {
+		display: none;
+	}
 }
 
 /* ============================================================
