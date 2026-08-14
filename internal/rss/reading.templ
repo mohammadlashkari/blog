@@ -6,7 +6,7 @@ import (
 	"strconv"
 )
 
-templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
+templ ReadingPage(v readingView) {
 	@ui.Layout("Reading", "Things i read", "reading", "en") {
 		<section class="mx-auto w-full max-w-shell px-4 sm:px-5">
 			<h1 class="mb-1 text-3xl">Reading</h1>
@@ -14,51 +14,176 @@ templ ReadingPage(items []store.RssItem, isAdmin bool, activeStatus string) {
 				A reading list from the RSS feeds I follow (happy to get good recommendations)
 			</p>
 			@feedsNote()
-			@readingTabs(activeStatus)
-			<ul class="border-t border-line">
-				for _, item := range items {
-					<li class="border-b border-line py-5">
-						<a
-							href={ templ.URL(item.Link) }
-							target="_blank"
-							rel="noopener noreferrer"
-							dir="auto"
-							class="inline-block hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
-						>
-							{ item.Title }
-						</a>
-						<div class="mt-1 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
-							<span dir="auto">{ item.FeedName }</span>
-							if item.PublishedAt != nil {
-								<span aria-hidden="true">·</span>
-								<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
-							}
-						</div>
-						if item.Description != nil && *item.Description != "" {
-							<p dir="auto" class="mt-2 line-clamp-2 text-[0.95rem] text-muted">
-								{ *item.Description }
-							</p>
+			@controls(v)
+			// The feed list is navigation, so it only earns its space in the
+			// grouped view, where every entry has a heading to jump to.
+			if v.Grouped {
+				@feedIndex(v)
+			}
+			if len(v.Items) == 0 {
+				<p class="border-t border-line pt-6 text-[0.9rem] text-muted">Nothing here yet.</p>
+			} else if v.Grouped {
+				for _, group := range v.Groups {
+					// no count here: groups are built per page, so it would
+					// disagree with the whole-bucket count in the feed index
+					<h2
+						id={ "feed-" + group.Slug }
+						class="mt-7 mb-2 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase"
+						dir="auto"
+					>
+						{ group.Name }
+					</h2>
+					<ul class="divide-y divide-line border-t border-line">
+						for _, item := range group.Items {
+							@readingItem(item, v, false)
 						}
-						if isAdmin {
-							<div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]">
-								if item.Status != unread {
-									@statusForm(item.ID, unread, "unread", activeStatus)
-								}
-								if item.Status != read {
-									@statusForm(item.ID, read, "read", activeStatus)
-								}
-								if item.Status != archived {
-									@statusForm(item.ID, archived, "archive", activeStatus)
-								}
-								if item.Status != saved {
-									@statusForm(item.ID, saved, "save", activeStatus)
-								}
-							</div>
-						}
-					</li>
+					</ul>
 				}
-			</ul>
+			} else {
+				<ul class="divide-y divide-line border-t border-line">
+					for _, item := range v.Items {
+						@readingItem(item, v, true)
+					}
+				</ul>
+			}
+			@pager(v)
 		</section>
+	}
+}
+
+// controls carries the status tabs and the list/grouped toggle on one line,
+// pushed to opposite edges the way the layout footer sets © against RSS.
+templ controls(v readingView) {
+	<nav class="mb-5 flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 border-t border-line pt-4 text-[0.85rem]">
+		<div class="flex flex-wrap gap-x-4 gap-y-1">
+			@tabLink(unread, "Unread", v)
+			@tabLink(read, "Read", v)
+			@tabLink(archived, "Archived", v)
+			@tabLink(saved, "Saved", v)
+		</div>
+		<div class="flex items-baseline gap-x-2">
+			@viewLink(readingURL(v.Status, false, 0), "List", !v.Grouped)
+			<span aria-hidden="true" class="text-muted">·</span>
+			@viewLink(readingURL(v.Status, true, 0), "By feed", v.Grouped)
+		</div>
+	</nav>
+}
+
+// Switching status keeps whichever view you're in, rather than dropping you
+// back to the flat list.
+templ tabLink(status, label string, v readingView) {
+	<a
+		href={ templ.URL(readingURL(status, v.Grouped, 0)) }
+		if v.Status == status {
+			aria-current="page"
+		}
+		class={ "hover:text-accent",
+			templ.KV("font-semibold text-accent", v.Status == status),
+			templ.KV("text-muted", v.Status != status) }
+	>
+		{ label }
+	</a>
+}
+
+templ viewLink(href, label string, isActive bool) {
+	<a
+		href={ templ.URL(href) }
+		if isActive {
+			aria-current="true"
+		}
+		class={ "hover:text-accent", templ.KV("text-accent", isActive), templ.KV("text-muted", !isActive) }
+	>
+		{ label }
+	</a>
+}
+
+// feedIndex links each feed to the page its newest item falls on — grouping is
+// per page, so linking to the feed's heading without a page would often point
+// at a heading that isn't rendered.
+templ feedIndex(v readingView) {
+	if len(v.Feeds) > 0 {
+		<div class="mb-6 flex flex-wrap gap-x-4 gap-y-1 text-[0.8rem]">
+			for _, feed := range v.Feeds {
+				<a
+					href={ templ.URL(readingURL(v.Status, true, feed.Page) + "#feed-" + feed.Slug) }
+					dir="auto"
+					class="text-muted hover:text-accent"
+				>
+					{ feed.Name }
+					<span class="tabular-nums">{ strconv.Itoa(feed.Total) }</span>
+				</a>
+			}
+		</div>
+	}
+}
+
+// showFeed is false in the grouped view, where the heading above the list
+// already names the feed.
+templ readingItem(item store.RssItem, v readingView, showFeed bool) {
+	<li class="py-4">
+		<a
+			href={ templ.URL(item.Link) }
+			target="_blank"
+			rel="noopener noreferrer"
+			dir="auto"
+			class="inline-block hover:underline hover:decoration-accent/40 hover:underline-offset-[0.15em]"
+		>
+			{ item.Title }
+		</a>
+		<div class="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
+			if showFeed {
+				<span dir="auto">{ item.FeedName }</span>
+			}
+			if item.PublishedAt != nil {
+				if showFeed {
+					<span aria-hidden="true">·</span>
+				}
+				<span>{ item.PublishedAt.Format("Jan 02, 2006") }</span>
+			}
+		</div>
+		if item.Description != nil && *item.Description != "" {
+			<p dir="auto" class="mt-1.5 line-clamp-2 text-[0.95rem] text-muted">
+				{ *item.Description }
+			</p>
+		}
+		if v.IsAdmin {
+			<div class="mt-2.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-[0.75rem]">
+				if item.Status != unread {
+					@statusForm(item.ID, unread, "unread", v)
+				}
+				if item.Status != read {
+					@statusForm(item.ID, read, "read", v)
+				}
+				if item.Status != archived {
+					@statusForm(item.ID, archived, "archive", v)
+				}
+				if item.Status != saved {
+					@statusForm(item.ID, saved, "save", v)
+				}
+			</div>
+		}
+	</li>
+}
+
+// A three-column grid rather than justify-between with placeholder elements:
+// the middle label stays centred even when only one arrow is present.
+templ pager(v readingView) {
+	if v.TotalPages > 1 {
+		<nav class="mt-7 grid grid-cols-3 items-baseline text-[0.85rem]">
+			<div>
+				if v.Page > 1 {
+					<a href={ templ.URL(readingURL(v.Status, v.Grouped, v.Page-1)) } class="text-accent hover:text-accent-hover">← Newer</a>
+				}
+			</div>
+			<div class="text-center text-muted tabular-nums">
+				{ strconv.Itoa(v.Page) } of { strconv.Itoa(v.TotalPages) }
+			</div>
+			<div class="text-end">
+				if v.Page < v.TotalPages {
+					<a href={ templ.URL(readingURL(v.Status, v.Grouped, v.Page+1)) } class="text-accent hover:text-accent-hover">Older →</a>
+				}
+			</div>
+		</nav>
 	}
 }
 
@@ -74,28 +199,14 @@ templ feedsNote() {
 	</p>
 }
 
-templ readingTabs(active string) {
-	<nav class="mb-6 flex flex-wrap gap-x-4 gap-y-1 border-t border-line pt-4 text-[0.85rem]">
-		@tabLink(unread, "Unread", active)
-		@tabLink(read, "Read", active)
-		@tabLink(archived, "Archived", active)
-		@tabLink(saved, "Saved", active)
-	</nav>
-}
-
-templ tabLink(status, label, active string) {
-	<a
-		href={ templ.URL("/reading?status=" + status) }
-		class={ "hover:text-accent", templ.KV("text-accent", active == status), templ.KV("text-muted", active != status) }
-	>
-		{ label }
-	</a>
-}
-
-templ statusForm(id int64, status, label, tab string) {
+templ statusForm(id int64, status, label string, v readingView) {
 	<form method="post" action={ templ.URL("/reading/" + strconv.FormatInt(id, 10) + "/status") } class="inline">
 		<input type="hidden" name="status" value={ status }/>
-		<input type="hidden" name="tab" value={ tab }/>
+		<input type="hidden" name="tab" value={ v.Status }/>
+		if v.Grouped {
+			<input type="hidden" name="group" value={ groupFeed }/>
+		}
+		<input type="hidden" name="page" value={ strconv.Itoa(v.Page) }/>
 		<button type="submit" class="text-muted hover:text-accent">{ label }</button>
 	</form>
 }

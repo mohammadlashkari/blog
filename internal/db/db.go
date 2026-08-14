@@ -10,7 +10,7 @@ import (
 )
 
 func Open(ctx context.Context, dbPath string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite", dbPath+"?_time_format=sqlite")
+	db, err := sql.Open("sqlite", dbPath+"?_time_format=sqlite&_pragma=busy_timeout(5000)")
 	if err != nil {
 		return nil, err
 	}
