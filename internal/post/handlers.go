@@ -205,13 +205,18 @@ func buildFeed(lang string, siteURL string, posts []*content.Post) ([]byte, erro
 			continue
 		}
 
+		description := p.Description
+		if description == "" {
+			description = p.Summary
+		}
+
 		link := siteURL + "/post/" + p.Slug
 		item := rss.Item{
 			GUID:        link,
 			Title:       p.Title,
 			Link:        link,
-			Author:      "Mohammad Lashkari",
-			Description: p.Description,
+			Author:      "moe.lashkari@gmail.com (Mohammad Lashkari)",
+			Description: description,
 			Categories:  p.Tags,
 			PubDate:     p.PublishedAt.Format(time.RFC1123Z),
 		}

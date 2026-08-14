@@ -142,6 +142,7 @@ func (c *Content) decodePost(path string) (*Post, error) {
 
 	post := &Post{
 		HTML:        buf.String(),
+		Summary:     excerpt(buf.String(), SummaryLength),
 		FrontMatter: fm,
 		// ContentHash: md5.Sum(content),
 	}

@@ -9,8 +9,11 @@ import (
 )
 
 const (
-	readingPageSize = 50
-	groupFeed       = "feed"
+	unread    = "unread"
+	read      = "read"
+	archived  = "archived"
+	saved     = "saved"
+	groupFeed = "feed"
 )
 
 var (
@@ -22,8 +25,6 @@ var (
 	nonAlnumRE = regexp.MustCompile(`[^\p{L}\p{Nd}]+`)
 )
 
-// isGroupedByFeed reports whether a ?group= query value (or the matching form
-// field) asks for the grouped view. Anything else is the flat list.
 func isGroupedByFeed(value string) bool {
 	return value == groupFeed
 }
@@ -48,8 +49,20 @@ func isStatusValid(s string) bool {
 	return slices.Contains([]string{unread, read, saved, archived}, s)
 }
 
-// feedGroup is a run of items sharing a feed, built in Go rather than in the
-// template — same shape as post.yearGroup.
+// readingView is everything the reading page needs. It replaces the loose
+// argument list ReadingPage used to take, which stopped scaling once grouping
+// and paging arrived.
+type readingView struct {
+	Items      []store.RssItem // current page, flat newest-first
+	Groups     []feedGroup     // populated only when Grouped
+	Feeds      []feedCount     // index over the whole status bucket, not just this page
+	Status     string
+	Grouped    bool
+	IsAdmin    bool
+	Page       int
+	TotalPages int
+}
+
 type feedGroup struct {
 	Name  string
 	Slug  string

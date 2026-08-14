@@ -28,7 +28,7 @@ templ ReadingPage(v readingView) {
 					// disagree with the whole-bucket count in the feed index
 					<h2
 						id={ "feed-" + group.Slug }
-						class="mt-7 mb-2 text-[0.78rem] font-semibold tracking-[0.06em] text-muted uppercase"
+						class="mt-7 mb-2 text-[0.9rem] font-semibold tracking-[0.04em] text-muted uppercase"
 						dir="auto"
 					>
 						{ group.Name }
@@ -132,7 +132,9 @@ templ readingItem(item store.RssItem, v readingView, showFeed bool) {
 		</a>
 		<div class="mt-0.5 flex flex-wrap items-center gap-x-2 text-[0.8rem] text-muted tabular-nums">
 			if showFeed {
-				<span dir="auto">{ item.FeedName }</span>
+				// bigger than the date beside it: the source is worth reading at a
+				// glance, the timestamp is not
+				<span dir="auto" class="text-[0.9rem]">{ item.FeedName }</span>
 			}
 			if item.PublishedAt != nil {
 				if showFeed {

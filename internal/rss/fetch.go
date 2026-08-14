@@ -13,13 +13,6 @@ import (
 	"time"
 )
 
-const (
-	unread   = "unread"
-	read     = "read"
-	archived = "archived"
-	saved    = "saved"
-)
-
 const maxFeedBytes = 10 << 20 // 10MB
 
 var pubDateFormats = []string{

@@ -12,19 +12,7 @@ import (
 	"time"
 )
 
-// readingView is everything the reading page needs. It replaces the loose
-// argument list ReadingPage used to take, which stopped scaling once grouping
-// and paging arrived.
-type readingView struct {
-	Items      []store.RssItem // current page, flat newest-first
-	Groups     []feedGroup     // populated only when Grouped
-	Feeds      []feedCount     // index over the whole status bucket, not just this page
-	Status     string
-	Grouped    bool
-	IsAdmin    bool
-	Page       int
-	TotalPages int
-}
+const readingPageSize = 50
 
 func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
@@ -46,10 +34,10 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 	// page, then group — grouping the page rather than the bucket keeps the
 	// page size fixed and the item order identical in both views.
 	feeds := feedCounts(items, readingPageSize)
-	items, page, totalPages := paginate(items, requestedPage, readingPageSize)
+	pageItems, page, totalPages := paginate(items, requestedPage, readingPageSize)
 
 	view := readingView{
-		Items:      items,
+		Items:      pageItems,
 		Feeds:      feeds,
 		Status:     activeStatus,
 		Grouped:    grouped,
@@ -58,7 +46,7 @@ func (s *Service) handleReadingPage(w http.ResponseWriter, r *http.Request) {
 		TotalPages: totalPages,
 	}
 	if grouped {
-		view.Groups = groupByFeed(items)
+		view.Groups = groupByFeed(pageItems)
 	}
 
 	ui.Render(w, r, ReadingPage(view))
@@ -79,7 +67,10 @@ func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := s.store.UpdateItemStatus(ctx, store.UpdateItemStatusParams{Status: status, ID: id}); err != nil {
+	err = s.store.UpdateItemStatus(
+		ctx, store.UpdateItemStatusParams{Status: status, ID: id},
+	)
+	if err != nil {
 		slog.ErrorContext(ctx, "failed to update item status", "error", err)
 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 		return
@@ -94,19 +85,6 @@ func (s *Service) handleSetStatus(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, readingURL(tab, grouped, page), http.StatusSeeOther)
 }
 
-// readingURL builds a /reading link, omitting the params that are already the
-// default so the common URL stays clean.
-func readingURL(status string, grouped bool, page int) string {
-	query := url.Values{"status": {status}}
-	if grouped {
-		query.Set("group", groupFeed)
-	}
-	if page > 1 {
-		query.Set("page", strconv.Itoa(page))
-	}
-	return "/reading?" + query.Encode()
-}
-
 func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
@@ -118,4 +96,15 @@ func (s *Service) handleRefreshReading(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	http.Redirect(w, r, "/reading", http.StatusSeeOther)
+}
+
+func readingURL(status string, grouped bool, page int) string {
+	query := url.Values{"status": {status}}
+	if grouped {
+		query.Set("group", groupFeed)
+	}
+	if page > 1 {
+		query.Set("page", strconv.Itoa(page))
+	}
+	return "/reading?" + query.Encode()
 }

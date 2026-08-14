@@ -39,5 +39,6 @@ type FrontMatter struct {
 type Post struct {
 	FrontMatter
 	HTML        string
+	Summary     string
 	ContentHash [md5.Size]byte
 }
